@@ -42,5 +42,9 @@
 
     <string name="image_header">%1$s by %2$s</string>
     <string name="menu_refresh">Refresh</string>
+    <string name="title_activity_create_item">CreateItemActivity</string>
+
+    <string name="hello_world">Hello world!</string>
+    <string name="action_settings">Settings</string>
 
 </resources>
