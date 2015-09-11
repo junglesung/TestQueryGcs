@@ -20,6 +20,8 @@
     android:versionName="1.0" >
 
     <uses-permission android:name="android.permission.INTERNET" />
+    <uses-feature android:name="android.hardware.camera"
+        android:required="true" />
 
     <!-- Min/target SDK versions (<uses-sdk>) managed by build.gradle -->
     <application
