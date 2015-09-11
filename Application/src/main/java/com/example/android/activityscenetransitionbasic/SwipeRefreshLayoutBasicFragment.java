@@ -70,7 +70,7 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
         super.onCreate(savedInstanceState);
 
         // Notify the system to allow an options menu for this fragment.
-        setHasOptionsMenu(true);
+//        setHasOptionsMenu(true);
     }
 
     // BEGIN_INCLUDE (inflate_view)

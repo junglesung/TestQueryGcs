@@ -4,13 +4,24 @@ import android.app.Activity;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
+import android.widget.ImageView;
+
+import com.squareup.picasso.Picasso;
 
 public class CreateItemActivity extends Activity {
 
+    private ImageView mImageView;
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_item);
+
+        mImageView = (ImageView) findViewById(R.id.imageview_create_item);
+        if (mImageView != null) {
+            Picasso.with(this)
+                    .load("http://testgcsserver.appspot.com.storage.googleapis.com/image_frame.png")
+                    .into(mImageView);
+        }
     }
 
     @Override

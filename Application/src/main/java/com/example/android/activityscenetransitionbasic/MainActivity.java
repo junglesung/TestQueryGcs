@@ -20,6 +20,7 @@ import com.melnykov.fab.FloatingActionButton;
 
 import android.app.Activity;
 import android.app.FragmentTransaction;
+import android.content.Intent;
 import android.os.Bundle;
 import android.util.Log;
 import android.view.View;
@@ -85,7 +86,9 @@ public class MainActivity extends Activity {
 
     private void createItem() {
         //
-        Toast.makeText(this, "createItem()", Toast.LENGTH_SHORT).show();
+        Intent intent = new Intent(this, CreateItemActivity.class);
+        startActivity(intent);
+//        Toast.makeText(this, "createItem()", Toast.LENGTH_SHORT).show();
         Log.d(LOG_TAG, "createItem()");
     }
 }
