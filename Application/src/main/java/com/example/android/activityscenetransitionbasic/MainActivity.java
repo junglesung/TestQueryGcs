@@ -22,10 +22,14 @@ import android.app.Activity;
 import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.os.Bundle;
+import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.widget.GridView;
 import android.widget.Toast;
+
+import java.io.File;
+import java.io.IOException;
 
 /**
  * Our main Activity in this sample. Displays a grid of items which an image and title. When the
@@ -88,7 +92,5 @@ public class MainActivity extends Activity {
         //
         Intent intent = new Intent(this, CreateItemActivity.class);
         startActivity(intent);
-//        Toast.makeText(this, "createItem()", Toast.LENGTH_SHORT).show();
-        Log.d(LOG_TAG, "createItem()");
     }
 }
