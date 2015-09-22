@@ -27,6 +27,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
 import com.squareup.picasso.Picasso;
 
 import org.json.JSONException;
@@ -490,7 +491,7 @@ public class CreateItemActivity extends Activity {
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
         if (networkInfo != null && networkInfo.isConnected()) {
             // Prepare event data
-            Item2 item = new Item2(null, 2, 1, mGcsPhotoUrl);
+            Item2 item = new Item2("", 2, 1, mGcsPhotoUrl, new Date());
             // Change state
             changeState(CreateItemState.SENDING);
             // Execute uploading thread
@@ -566,6 +567,7 @@ public class CreateItemActivity extends Activity {
 
                 // Convert item to JSON string
                 data = item.toJSONObject().toString().getBytes();
+//                data = new Gson().toJson(item).getBytes();
 
                 // For best performance, you should call either setFixedLengthStreamingMode(int) when the body length is known in advance, or setChunkedStreamingMode(int) when it is not. Otherwise HttpURLConnection will be forced to buffer the complete request body in memory before it is transmitted, wasting (and possibly exhausting) heap and increasing latency.
                 size = data.length;
@@ -652,6 +654,7 @@ public class CreateItemActivity extends Activity {
                 mButtonCamera.setEnabled(true);
                 mButtonGallery.setEnabled(true);
                 mTextViewInfo.setText(R.string.select_or_take_a_photo);
+                mButtonMore.setEnabled(true);
                 mButtonSend.setText(R.string.cancel);
                 // Set thread
                 if (mUploadImageTask != null && mUploadImageTask.getStatus() != AsyncTask.Status.FINISHED) {
@@ -666,6 +669,7 @@ public class CreateItemActivity extends Activity {
                 mButtonCamera.setEnabled(false);
                 mButtonGallery.setEnabled(false);
                 mTextViewInfo.setText(String.format(getString(R.string.uploading_image), 0));
+                mButtonMore.setEnabled(true);
                 mButtonSend.setText(R.string.cancel);
                 break;
             case READY_TO_SEND:
@@ -673,6 +677,7 @@ public class CreateItemActivity extends Activity {
                 mButtonCamera.setEnabled(true);
                 mButtonGallery.setEnabled(true);
                 mTextViewInfo.setText(R.string.wait_for_1_friend);
+                mButtonMore.setEnabled(true);
                 mButtonSend.setText(R.string.send);
                 // Set thread
                 if (mCreateItemTask != null && mCreateItemTask.getStatus() != AsyncTask.Status.FINISHED) {
@@ -697,6 +702,10 @@ public class CreateItemActivity extends Activity {
         }
     }
 
+    private void navigateUp() {
+        NavUtils.navigateUpFromSameTask(this);
+    }
+
     private void showFinishDialog() {
         // 1. Instantiate an AlertDialog.Builder with its constructor
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
@@ -706,6 +715,7 @@ public class CreateItemActivity extends Activity {
         builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
             public void onClick(DialogInterface dialog, int id) {
                 // User clicked OK button
+                navigateUp();
             }
         });
         // 3. Get the AlertDialog from create()
