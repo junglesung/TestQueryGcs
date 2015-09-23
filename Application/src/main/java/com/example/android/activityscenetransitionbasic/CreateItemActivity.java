@@ -60,15 +60,15 @@ public class CreateItemActivity extends Activity {
     private final String CREATE_ITEM_URL = "https://testgcsserver.appspot.com/api/0.1/items";
 
     // Current image path
-    Uri mCurrentPhotoUri;
-    String mGcsPhotoUrl;
+    private Uri mCurrentPhotoUri;
+    private String mGcsPhotoUrl;
 
     // State
-    CreateItemState mState;
+    private CreateItemState mState;
 
     // Threads
-    UploadImageTask mUploadImageTask;
-    CreateItemTask mCreateItemTask;
+    private UploadImageTask mUploadImageTask;
+    private CreateItemTask mCreateItemTask;
 
     private ImageView mImageView;
     private ImageButton mButtonCamera;
@@ -547,8 +547,8 @@ public class CreateItemActivity extends Activity {
             }
         }
 
-        // Send an image to Google Cloud Storage
-        // Return the URL of the uploaded image
+        // Send an item to Google App Engine
+        // Return the URL of the uploaded item
         // Return null if failed
         private String sendAnItem(Item2 item) throws IOException {
             URL url = new URL(CREATE_ITEM_URL);
@@ -694,7 +694,6 @@ public class CreateItemActivity extends Activity {
                 break;
             case FINISHED:
                 showFinishDialog();
-                NavUtils.navigateUpFromSameTask(this);
                 break;
             default:
                 Log.d(LOG_TAG, "Undefined state " + state);

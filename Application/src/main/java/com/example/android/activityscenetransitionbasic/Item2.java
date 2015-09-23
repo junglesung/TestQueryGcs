@@ -68,11 +68,13 @@ public class Item2 {
     }
 
     public String getPhotoUrl() {
-        return LARGE_BASE_URL + image;
+//        return LARGE_BASE_URL + image;
+        return image;
     }
 
     public String getThumbnailUrl() {
-        return THUMB_BASE_URL + image;
+//        return THUMB_BASE_URL + image;
+        return image;
     }
 
     // Android org.json is not as powerful as standard JAVA org.json.

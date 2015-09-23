@@ -17,7 +17,10 @@
 package com.example.android.activityscenetransitionbasic;
 
 import android.app.Activity;
+import android.content.Context;
 import android.content.Intent;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
@@ -39,9 +42,23 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.gson.Gson;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
 import com.squareup.picasso.Picasso;
 
+import java.io.BufferedInputStream;
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.Random;
+
+import javax.net.ssl.HttpsURLConnection;
 
 /**
  * A basic sample that shows how to use {@link android.support.v4.widget.SwipeRefreshLayout} to add
@@ -57,6 +74,11 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
 
     private static final String LOG_TAG = "Test";
 
+    private Item2[] items;
+
+    // Threads
+    private QueryItemTask mQueryItemTask;
+
     /**
      * The {@link android.support.v4.widget.SwipeRefreshLayout} that detects swipe gestures and
      * triggers callbacks in the app.
@@ -71,6 +93,10 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
 
         // Notify the system to allow an options menu for this fragment.
 //        setHasOptionsMenu(true);
+
+        // Initial variables
+        items = null;
+        mQueryItemTask = null;
     }
 
     // BEGIN_INCLUDE (inflate_view)
@@ -128,6 +154,9 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
             }
         });
         // END_INCLUDE (setup_refreshlistener)
+
+        // Get the latest items from server
+        initiateRefresh();
     }
     // END_INCLUDE (setup_views)
 
@@ -200,12 +229,16 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
      * SwipeGestureLayout onRefresh() method and the Refresh action item to refresh the content.
      */
     private void initiateRefresh() {
-        Log.i(LOG_TAG, "initiateRefresh");
-
-        /**
-         * Execute the background task, which uses {@link android.os.AsyncTask} to load the data.
-         */
-        new DummyBackgroundTask().execute();
+        // Check network connection ability and then access Google Cloud Storage
+        ConnectivityManager connMgr = (ConnectivityManager)getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+        if (networkInfo != null && networkInfo.isConnected()) {
+            // Execute querying thread
+            mQueryItemTask = new QueryItemTask();
+            mQueryItemTask.execute();
+        } else {
+            Toast.makeText(getActivity(), getString(R.string.no_network_connection_available), Toast.LENGTH_SHORT).show();
+        }
     }
     // END_INCLUDE (initiate_refresh)
 
@@ -214,9 +247,8 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
      * When the AsyncTask finishes, it calls onRefreshComplete(), which updates the data in the
      * ListAdapter and turns off the progress bar.
      */
-    private void onRefreshComplete(int x) {
-        Log.i(LOG_TAG, "onRefreshComplete " + x);
-        Toast.makeText(getActivity(), "Refresh " + x, Toast.LENGTH_SHORT).show();
+    private void onRefreshComplete(Item2[] result) {
+        items = result;
 
         // Remove all items from the ListAdapter, and then replace them with the new items
         mAdapter.notifyDataSetChanged();
@@ -226,32 +258,80 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
     }
     // END_INCLUDE (refresh_complete)
 
-    /**
-     * Dummy {@link AsyncTask} which simulates a long running task to fetch new cheeses.
-     */
-    private class DummyBackgroundTask extends AsyncTask<Void, Void, Integer> {
+    // Get the latest items from the server in background
+    private class QueryItemTask extends AsyncTask<Void, Void, Item2[]> {
 
-        static final int TASK_DURATION = 3 * 1000; // 3 seconds
+        static final String QUERY_ITEM_URL = "https://testgcsserver.appspot.com/api/0.1/items";
 
         @Override
-        protected Integer doInBackground(Void... params) {
-            // Sleep for a small amount of time to simulate a background-task
-            try {
-                Thread.sleep(TASK_DURATION);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-            return new Random().nextInt(10);
+        protected Item2[] doInBackground(Void... params) {
+            return getItems();
         }
 
         @Override
-        protected void onPostExecute(Integer result) {
+        protected void onPostExecute(Item2[] result) {
             super.onPostExecute(result);
 
             // Tell the Fragment that the refresh has completed
             onRefreshComplete(result);
         }
 
+        // Send GET to the server
+        // Return JSON string of items
+        // Return null if failed
+        private Item2[] getItems() {
+            URL url;
+            HttpsURLConnection urlConnection = null;
+            Item2[] items = null;
+
+            try {
+                url = new URL(QUERY_ITEM_URL);
+                urlConnection = (HttpsURLConnection) url.openConnection();
+
+                // Set content type
+                urlConnection.setRequestProperty("Content-Type", "application/json");
+
+                // Set timeout
+                urlConnection.setReadTimeout(10000 /* milliseconds */);
+                urlConnection.setConnectTimeout(15000 /* milliseconds */);
+
+                // Send and get response
+                // getResponseCode() will automatically trigger connect()
+                int responseCode = urlConnection.getResponseCode();
+                String responseMsg = urlConnection.getResponseMessage();
+                Log.d(LOG_TAG, "Response " + responseCode + " " + responseMsg);
+                if (responseCode != HttpURLConnection.HTTP_OK) {
+                    return null;
+                }
+
+                // Get items from body
+                InputStreamReader in = new InputStreamReader(urlConnection.getInputStream());
+                items = new Gson().fromJson(in, Item2[].class);
+            } catch (JsonIOException e) {
+                e.printStackTrace();
+                Log.e(LOG_TAG, "Network may be unavailable while querying items");
+            } catch (JsonSyntaxException e) {
+                e.printStackTrace();
+                Log.e(LOG_TAG, "Get wrong JSON data while querying items");
+            } catch (MalformedURLException e) {
+                e.printStackTrace();
+                Log.e(LOG_TAG, "Wrong query item URL " + QUERY_ITEM_URL);
+            } catch (IOException e) {
+                e.printStackTrace();
+                Log.e(LOG_TAG, "Querying items failed");
+            } finally {
+                if (urlConnection != null) {
+                    urlConnection.disconnect();
+                }
+            }
+            if (items == null) {
+                Log.d(LOG_TAG, "Querying items failed");
+            } else {
+                Log.d(LOG_TAG, "Got " + items.length + "items");
+            }
+
+            return items;
+        }
     }
 
     /**
@@ -261,17 +341,20 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
 
         @Override
         public int getCount() {
-            return Item.ITEMS.length;
+            if (items == null) {
+                return 0;
+            }
+            return items.length;
         }
 
         @Override
-        public Item getItem(int position) {
-            return Item.ITEMS[position];
+        public Item2 getItem(int position) {
+            return items[position];
         }
 
         @Override
         public long getItemId(int position) {
-            return getItem(position).getId();
+            return position;
         }
 
         @Override
@@ -280,7 +363,7 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
                 view = getActivity().getLayoutInflater().inflate(R.layout.grid_item, viewGroup, false);
             }
 
-            final Item item = getItem(position);
+            final Item2 item = getItem(position);
 
             // Load the thumbnail image
             ImageView image = (ImageView) view.findViewById(R.id.imageview_item);
@@ -288,7 +371,7 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
 
             // Set the TextView's contents
             TextView name = (TextView) view.findViewById(R.id.textview_name);
-            name.setText(item.getName());
+            name.setText(item.getAttendant() + "/" + item.getPeople());
 
             return view;
         }
