@@ -16,14 +16,23 @@
 
 package com.example.android.activityscenetransitionbasic;
 
+import com.google.gson.Gson;
 import com.squareup.picasso.Picasso;
 
 import android.app.Activity;
+import android.os.Build;
 import android.os.Bundle;
+import android.support.v4.app.NavUtils;
 import android.support.v4.view.ViewCompat;
 import android.transition.Transition;
+import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
+
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 /**
  * Our secondary Activity which is launched from {@link MainActivity}. Has a simple detail UI
@@ -31,8 +40,11 @@ import android.widget.TextView;
  */
 public class DetailActivity extends Activity {
 
+    private static final String LOG_TAG = "Test";
+
     // Extra name for the ID parameter
     public static final String EXTRA_PARAM_ID = "detail:_id";
+    public static final String EXTRA_PARAM_ITEM = "detail:_item";
 
     // View name of the header image. Used for activity scene transitions
     public static final String VIEW_NAME_HEADER_IMAGE = "detail:header:image";
@@ -40,21 +52,39 @@ public class DetailActivity extends Activity {
     // View name of the header title. Used for activity scene transitions
     public static final String VIEW_NAME_HEADER_TITLE = "detail:header:title";
 
+    // RCF 3339 time format from the server
+    public static final String RCF3339FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ";
+
     private ImageView mHeaderImageView;
     private TextView mHeaderTitle;
+    private TextView mTextViewIntroduction;
 
-    private Item mItem;
+    private Item2 mItem;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.details);
 
-        // Retrieve the correct Item instance, using the ID provided in the Intent
-        mItem = Item.getItem(getIntent().getIntExtra(EXTRA_PARAM_ID, 0));
+        // Get item in JSON format
+        String itemJson = getIntent().getStringExtra(EXTRA_PARAM_ITEM);
+        if (itemJson == null) {
+            Log.e(LOG_TAG, "Get null item from intent");
+            NavUtils.navigateUpFromSameTask(this);
+        }
+
+        // Transform JSON to item
+        try {
+            mItem = new Gson().fromJson(itemJson, Item2.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e(LOG_TAG, "Wrong JSON format in transforming item");
+            NavUtils.navigateUpFromSameTask(this);
+        }
 
         mHeaderImageView = (ImageView) findViewById(R.id.imageview_header);
         mHeaderTitle = (TextView) findViewById(R.id.textview_title);
+        mTextViewIntroduction = (TextView) findViewById(R.id.textview_introduction);
 
         // BEGIN_INCLUDE(detail_set_view_name)
         /**
@@ -70,18 +100,31 @@ public class DetailActivity extends Activity {
     }
 
     private void loadItem() {
-        // Set the title TextView to the item's name and author
-        mHeaderTitle.setText(getString(R.string.image_header, mItem.getName(), mItem.getAuthor()));
+        // Show detail information
+        mHeaderTitle.setText(mItem.getAttendant() + "/" + mItem.getPeople());
 
-//        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && addTransitionListener()) {
+        // Transform time format and show
+        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
+//        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.TAIWAN);
+        String timeString = mItem.getCreatetime();
+        try {
+            Date createTime = sdf.parse(timeString);
+            timeString = createTime.toString();
+        } catch (ParseException e) {
+            e.printStackTrace();
+            Log.d(LOG_TAG, "Wrong format CreateTime from server. Show it directory");
+        }
+        mTextViewIntroduction.setText(timeString);
+
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && addTransitionListener()) {
             // If we're running on Lollipop and we have added a listener to the shared element
             // transition, load the thumbnail. The listener will load the full-size image when
             // the transition is complete.
-//            loadThumbnail();
-//        } else {
+            loadThumbnail();
+        } else {
             // If all other cases we should just load the full-size image now
             loadFullSizeImage();
-//        }
+        }
     }
 
     /**

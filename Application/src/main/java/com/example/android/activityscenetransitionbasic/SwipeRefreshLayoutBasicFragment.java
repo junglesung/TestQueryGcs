@@ -47,16 +47,11 @@ import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
 import com.squareup.picasso.Picasso;
 
-import java.io.BufferedInputStream;
-import java.io.BufferedOutputStream;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.Random;
 
 import javax.net.ssl.HttpsURLConnection;
 
@@ -196,11 +191,19 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
      * {@link DetailActivity}, using the Scene Transition animation functionality.
      */
     public void showDetail(AdapterView<?> adapterView, View view, int position, long id) {
-        Item item = (Item) adapterView.getItemAtPosition(position);
+        // Get the specified item
+        if (position > items.length) {
+            Log.e(LOG_TAG, "User click position " + position + " is out of item number " + items.length);
+            return;
+        }
+        Item2 item = items[position];
+
+        // Transform item to JSON
+        String itemJson = new Gson().toJson(item);
 
         // Construct an Intent as normal
         Intent intent = new Intent(getActivity(), DetailActivity.class);
-        intent.putExtra(DetailActivity.EXTRA_PARAM_ID, item.getId());
+        intent.putExtra(DetailActivity.EXTRA_PARAM_ITEM, itemJson);
 
         // BEGIN_INCLUDE(start_activity)
         /**
@@ -307,6 +310,11 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
                 // Get items from body
                 InputStreamReader in = new InputStreamReader(urlConnection.getInputStream());
                 items = new Gson().fromJson(in, Item2[].class);
+
+                // Vernon debug
+                for (Item2 i: items) {
+                    Log.d(LOG_TAG, i.toString());
+                }
             } catch (JsonIOException e) {
                 e.printStackTrace();
                 Log.e(LOG_TAG, "Network may be unavailable while querying items");

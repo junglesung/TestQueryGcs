@@ -3,28 +3,28 @@ package com.example.android.activityscenetransitionbasic;
 import org.json.JSONException;
 import org.json.JSONObject;
 
-import java.util.Date;
-
-/**
- * Represents an Item in our application. Each item has an id, people number, attendant number, full size image url and
- * thumbnail url.
- */
 public class Item2 {
     private String id;
     private int people;
     private int attendant;
     private String image;
-    private Date createTime;
+    private String createtime; // RCF 3339 format "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
 
     private static final String LARGE_BASE_URL = "http://testgcsserver.appspot.com.storage.googleapis.com/testgcs/large/";
     private static final String THUMB_BASE_URL = "http://testgcsserver.appspot.com.storage.googleapis.com/testgcs/thumbs/";
 
-    Item2 (String _id, int _people, int _attendant, String _image, Date _createTime) {
+    // Default constructor
+    Item2() {
+        //
+    }
+
+    // Constructor
+    Item2 (String _id, int _people, int _attendant, String _image, String _createTime) {
         id = _id;
         people = _people;
         attendant = _attendant;
         image = _image;
-        createTime = _createTime;
+        createtime = _createTime;
     }
 
     public String getId() {
@@ -59,12 +59,12 @@ public class Item2 {
         this.image = image;
     }
 
-    public Date getCreateTime() {
-        return createTime;
+    public String getCreatetime() {
+        return createtime;
     }
 
-    public void setCreateTime(Date createTime) {
-        this.createTime = createTime;
+    public void setCreatetime(String createtime) {
+        this.createtime = createtime;
     }
 
     public String getPhotoUrl() {
@@ -89,5 +89,16 @@ public class Item2 {
         j.put("image", image);
         // Never send CreateTime to the server because it's determined by the server.
         return j;
+    }
+
+    @Override
+    public String toString() {
+        return "Item2{" +
+                "id='" + id + '\'' +
+                ", people=" + people +
+                ", attendant=" + attendant +
+                ", image='" + image + '\'' +
+                ", createtime=" + createtime +
+                '}';
     }
 }

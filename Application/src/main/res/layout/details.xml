@@ -1,5 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
-<!-- Copyright (C) 2014 The Android Open Source Project
+<?xml version="1.0" encoding="utf-8"?><!-- Copyright (C) 2014 The Android Open Source Project
 
      Licensed under the Apache License, Version 2.0 (the "License");
      you may not use this file except in compliance with the License.
@@ -15,42 +14,42 @@
 -->
 
 <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
 
     <LinearLayout
-          android:layout_width="match_parent"
-          android:layout_height="wrap_content"
-          android:orientation="vertical">
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical">
 
         <com.example.android.activityscenetransitionbasic.SquareFrameLayout
-              android:layout_width="match_parent"
-              android:layout_height="wrap_content">
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
             <ImageView
-                  android:id="@+id/imageview_header"
-                  android:layout_width="match_parent"
-                  android:layout_height="match_parent"
-                  android:scaleType="centerCrop" />
+                android:id="@+id/imageview_header"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:scaleType="centerCrop" />
 
         </com.example.android.activityscenetransitionbasic.SquareFrameLayout>
 
         <TextView
-              android:id="@+id/textview_title"
-              android:layout_width="match_parent"
-              android:layout_height="wrap_content"
-              android:background="?android:attr/colorPrimary"
-              android:theme="@android:style/Theme.Material"
-              android:textAppearance="@android:style/TextAppearance.Material.Title"
-              android:maxLines="2"
-              android:padding="16dp" />
+            android:id="@+id/textview_title"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="?android:attr/colorPrimary"
+            android:maxLines="2"
+            android:padding="16dp"
+            android:textAppearance="@android:style/TextAppearance.Material.Title"
+            android:theme="@android:style/Theme.Material" />
 
         <TextView
-              android:layout_width="match_parent"
-              android:layout_height="wrap_content"
-              android:padding="16dp"
-              android:text="@string/bacon_ipsum"
-              android:textAppearance="@android:style/TextAppearance.Material.Body1" />
+            android:id="@+id/textview_introduction"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="16dp"
+            android:textAppearance="@android:style/TextAppearance.Material.Body1" />
 
     </LinearLayout>
 

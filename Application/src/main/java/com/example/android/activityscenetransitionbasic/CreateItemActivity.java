@@ -491,7 +491,8 @@ public class CreateItemActivity extends Activity {
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
         if (networkInfo != null && networkInfo.isConnected()) {
             // Prepare event data
-            Item2 item = new Item2("", 2, 1, mGcsPhotoUrl, new Date());
+            // Item2.CreateTime is determined by the server. So just set an empty string.
+            Item2 item = new Item2("", 2, 1, mGcsPhotoUrl, "");
             // Change state
             changeState(CreateItemState.SENDING);
             // Execute uploading thread
