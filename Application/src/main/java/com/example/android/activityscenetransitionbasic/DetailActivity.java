@@ -29,10 +29,12 @@ import android.util.Log;
 import android.widget.ImageView;
 import android.widget.TextView;
 
+import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.TimeZone;
 
 /**
  * Our secondary Activity which is launched from {@link MainActivity}. Has a simple detail UI
@@ -104,12 +106,13 @@ public class DetailActivity extends Activity {
         mHeaderTitle.setText(mItem.getAttendant() + "/" + mItem.getPeople());
 
         // Transform time format and show
-        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss");
-//        SimpleDateFormat sdf = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.TAIWAN);
+        SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);  // in format
+        DateFormat sdf2 = DateFormat.getDateTimeInstance();  // out format
         String timeString = mItem.getCreatetime();
+        sdf1.setTimeZone(TimeZone.getTimeZone("UTC"));  // Get UTC time from server
         try {
-            Date createTime = sdf.parse(timeString);
-            timeString = createTime.toString();
+            Date d = sdf1.parse(timeString);
+            timeString = sdf2.format(d);
         } catch (ParseException e) {
             e.printStackTrace();
             Log.d(LOG_TAG, "Wrong format CreateTime from server. Show it directory");
