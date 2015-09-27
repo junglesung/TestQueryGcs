@@ -17,24 +17,44 @@
 package com.example.android.activityscenetransitionbasic;
 
 import com.google.gson.Gson;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonSyntaxException;
 import com.squareup.picasso.Picasso;
 
 import android.app.Activity;
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.NavUtils;
 import android.support.v4.view.ViewCompat;
 import android.transition.Transition;
 import android.util.Log;
+import android.view.View;
+import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.Toast;
 
+import org.json.JSONObject;
+
+import java.io.BufferedOutputStream;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.io.OutputStream;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
 import java.util.TimeZone;
+
+import javax.net.ssl.HttpsURLConnection;
 
 /**
  * Our secondary Activity which is launched from {@link MainActivity}. Has a simple detail UI
@@ -55,13 +75,18 @@ public class DetailActivity extends Activity {
     public static final String VIEW_NAME_HEADER_TITLE = "detail:header:title";
 
     // RCF 3339 time format from the server
-    public static final String RCF3339FORMAT = "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ";
+    public static final String RFC3339FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
 
     private ImageView mHeaderImageView;
     private TextView mHeaderTitle;
+    private ImageButton mButtonPlus;
+    private ImageButton mButtonMinus;
     private TextView mTextViewIntroduction;
 
     private Item2 mItem;
+
+    // Threads
+    private UpdateItemTask mUpdateItemTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -86,7 +111,23 @@ public class DetailActivity extends Activity {
 
         mHeaderImageView = (ImageView) findViewById(R.id.imageview_header);
         mHeaderTitle = (TextView) findViewById(R.id.textview_title);
+        mButtonPlus = (ImageButton) findViewById(R.id.imageButton_plus);
+        mButtonMinus = (ImageButton) findViewById(R.id.imageButton_minus);
         mTextViewIntroduction = (TextView) findViewById(R.id.textview_introduction);
+
+        mButtonPlus.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                attend();
+            }
+        });
+
+        mButtonMinus.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                leave();
+            }
+        });
 
         // BEGIN_INCLUDE(detail_set_view_name)
         /**
@@ -106,7 +147,7 @@ public class DetailActivity extends Activity {
         mHeaderTitle.setText(mItem.getAttendant() + "/" + mItem.getPeople());
 
         // Transform time format and show
-        SimpleDateFormat sdf1 = new SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss", Locale.US);  // in format
+        SimpleDateFormat sdf1 = new SimpleDateFormat(RFC3339FORMAT, Locale.US);  // in format
         DateFormat sdf2 = DateFormat.getDateTimeInstance();  // out format
         String timeString = mItem.getCreatetime();
         sdf1.setTimeZone(TimeZone.getTimeZone("UTC"));  // Get UTC time from server
@@ -199,6 +240,131 @@ public class DetailActivity extends Activity {
 
         // If we reach here then we have not added a listener
         return false;
+    }
+
+    // Attend in the item
+    private void attend() {
+        modifyAttendant(1);
+    }
+
+    // Leave the item
+    private void leave() {
+        modifyAttendant(-1);
+    }
+
+    private void modifyAttendant(int change) {
+        // Check network connection ability and then access Google Cloud Storage
+        ConnectivityManager connMgr = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+        if (networkInfo != null && networkInfo.isConnected()) {
+            // Execute querying thread
+            mUpdateItemTask = new UpdateItemTask();
+            mUpdateItemTask.execute(change);
+        } else {
+            Toast.makeText(this, getString(R.string.no_network_connection_available), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // Get the latest items from the server in background
+    private class UpdateItemTask extends AsyncTask<Integer, Void, Integer> {
+        static final String UPDATE_ITEM_URL = "https://testgcsserver.appspot.com/api/0.1/items";
+        private int change;
+
+        @Override
+        protected Integer doInBackground(Integer... params) {
+            // Get the change number
+            if (params.length < 1) {
+                Log.e(LOG_TAG, "No specified number");
+                return 0;
+            }
+            change = params[0];
+            if (updateItem() == 0) {
+                return change;
+            } else {
+                return 0;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Integer _change) {
+            super.onPostExecute(_change);
+            mItem.setAttendant(mItem.getAttendant() + _change);
+        }
+
+        // HTTP PUT change to the server
+        // Return 0 on success
+        // Return -1 on failure
+        private int updateItem() {
+            URL url;
+            HttpsURLConnection urlConnection = null;
+            int size;
+            byte[] data;
+            OutputStream out;
+            String itemUrl = UPDATE_ITEM_URL + "/" + mItem.getId();
+
+            try {
+                url = new URL(itemUrl);
+                urlConnection = (HttpsURLConnection) url.openConnection();
+
+                // Set content type
+                urlConnection.setRequestProperty("Content-Type", "application/json");
+
+                // To upload data to a web server, configure the connection for output using setDoOutput(true). It will use POST if setDoOutput(true) has been called.
+                urlConnection.setDoOutput(true);
+                urlConnection.setRequestMethod("PUT");
+
+                // Convert item to JSON string
+                data = new JSONObject().put("attendant", change).toString().getBytes();
+
+                // For best performance, you should call either setFixedLengthStreamingMode(int) when the body length is known in advance, or setChunkedStreamingMode(int) when it is not. Otherwise HttpURLConnection will be forced to buffer the complete request body in memory before it is transmitted, wasting (and possibly exhausting) heap and increasing latency.
+                size = data.length;
+                if (size > 0) {
+                    urlConnection.setFixedLengthStreamingMode(size);
+                } else {
+                    // Set default chunk size
+                    urlConnection.setChunkedStreamingMode(0);
+                }
+
+                // Get the OutputStream of HTTP client
+                out = new BufferedOutputStream(urlConnection.getOutputStream());
+                // Copy from file to the HTTP client
+                out.write(data);
+                // Make sure to close streams, otherwise "unexpected end of stream" error will happen
+                out.close();
+
+                // Check canceled
+                if (isCancelled()) {
+                    Log.d(LOG_TAG, "Updating item canceled");
+                    return -1;
+                }
+
+                // Set timeout
+                urlConnection.setReadTimeout(10000 /* milliseconds */);
+                urlConnection.setConnectTimeout(15000 /* milliseconds */);
+
+                // Send and get response
+                // getResponseCode() will automatically trigger connect()
+                int responseCode = urlConnection.getResponseCode();
+                String responseMsg = urlConnection.getResponseMessage();
+                Log.d(LOG_TAG, "Response " + responseCode + " " + responseMsg);
+                if (responseCode != HttpURLConnection.HTTP_OK) {
+                    Log.d(LOG_TAG, "Update item attendant " + change + " failed");
+                    return -1;
+                }
+
+                // Vernon debug
+                Log.d(LOG_TAG, "Update item attendant " + change + " successfully");
+
+            } catch (Exception e) {
+                e.printStackTrace();
+            } finally {
+                if (urlConnection != null) {
+                    urlConnection.disconnect();
+                }
+            }
+
+            return 0;
+        }
     }
 
 }
