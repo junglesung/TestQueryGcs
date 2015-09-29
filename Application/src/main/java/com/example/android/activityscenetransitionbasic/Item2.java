@@ -9,6 +9,7 @@ public class Item2 {
     private int attendant;
     private String image;
     private String createtime; // RCF 3339 format "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
+    private String location; // latitude,longitude in format "[+-]DDD.DDDDD"
 
     private static final String LARGE_BASE_URL = "http://testgcsserver.appspot.com.storage.googleapis.com/testgcs/large/";
     private static final String THUMB_BASE_URL = "http://testgcsserver.appspot.com.storage.googleapis.com/testgcs/thumbs/";
@@ -19,12 +20,18 @@ public class Item2 {
     }
 
     // Constructor
-    Item2 (String _id, int _people, int _attendant, String _image, String _createTime) {
+    Item2 (String _id,
+           int _people,
+           int _attendant,
+           String _image,
+           String _createTime,
+           String _location) {
         id = _id;
         people = _people;
         attendant = _attendant;
         image = _image;
         createtime = _createTime;
+        location = _location;
     }
 
     public String getId() {
