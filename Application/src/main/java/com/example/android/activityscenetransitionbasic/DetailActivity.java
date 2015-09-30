@@ -288,7 +288,10 @@ public class DetailActivity extends Activity {
         @Override
         protected void onPostExecute(Integer _change) {
             super.onPostExecute(_change);
+            // Update memory
             mItem.setAttendant(mItem.getAttendant() + _change);
+            // Update UI
+            mHeaderTitle.setText(mItem.getAttendant() + "/" + mItem.getPeople());
         }
 
         // HTTP PUT change to the server

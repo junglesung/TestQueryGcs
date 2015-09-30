@@ -149,9 +149,6 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
             }
         });
         // END_INCLUDE (setup_refreshlistener)
-
-        // Get the latest items from server
-        initiateRefresh();
     }
     // END_INCLUDE (setup_views)
 
@@ -185,6 +182,13 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
         return super.onOptionsItemSelected(item);
     }
     // END_INCLUDE (setup_refresh_menu_listener)
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        // Get the latest items from server
+        initiateRefresh();
+    }
 
     /**
      * Called when an item in the {@link android.widget.GridView} is clicked. Here will launch the
