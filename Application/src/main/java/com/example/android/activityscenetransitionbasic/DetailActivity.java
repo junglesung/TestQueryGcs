@@ -130,13 +130,15 @@ public class DetailActivity extends Activity {
         });
 
         // BEGIN_INCLUDE(detail_set_view_name)
-        /**
-         * Set the name of the view's which will be transition to, using the static values above.
-         * This could be done in the layout XML, but exposing it via static variables allows easy
-         * querying from other Activities
-         */
-        ViewCompat.setTransitionName(mHeaderImageView, VIEW_NAME_HEADER_IMAGE);
-        ViewCompat.setTransitionName(mHeaderTitle, VIEW_NAME_HEADER_TITLE);
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
+            /**
+             * Set the name of the view's which will be transition to, using the static values above.
+             * This could be done in the layout XML, but exposing it via static variables allows easy
+             * querying from other Activities
+             */
+            ViewCompat.setTransitionName(mHeaderImageView, VIEW_NAME_HEADER_IMAGE);
+            ViewCompat.setTransitionName(mHeaderTitle, VIEW_NAME_HEADER_TITLE);
+        }
         // END_INCLUDE(detail_set_view_name)
 
         loadItem();

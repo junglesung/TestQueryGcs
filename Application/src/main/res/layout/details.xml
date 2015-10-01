@@ -43,12 +43,11 @@
             android:id="@+id/textview_title"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:background="?android:attr/colorPrimary"
+            android:background="#000000"
+            android:textColor="#ffffff"
             android:maxLines="2"
             android:padding="16dp"
-            android:textAppearance="@android:style/TextAppearance.Material.Title"
-            android:theme="@android:style/Theme.Material"
-            android:layout_below="@id/frame_image"/>
+            android:layout_below="@id/frame_image" />
 
         <ImageButton
             android:layout_width="wrap_content"
@@ -71,7 +70,6 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:padding="16dp"
-            android:textAppearance="@android:style/TextAppearance.Material.Body1"
             android:layout_below="@id/textview_title" />
 
     </RelativeLayout>

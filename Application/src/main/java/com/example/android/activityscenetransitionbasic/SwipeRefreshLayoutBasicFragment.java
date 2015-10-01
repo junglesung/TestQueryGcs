@@ -22,6 +22,7 @@ import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
@@ -209,25 +210,29 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
         Intent intent = new Intent(getActivity(), DetailActivity.class);
         intent.putExtra(DetailActivity.EXTRA_PARAM_ITEM, itemJson);
 
-        // BEGIN_INCLUDE(start_activity)
-        /**
-         * Now create an {@link android.app.ActivityOptions} instance using the
-         * {@link ActivityOptionsCompat#makeSceneTransitionAnimation(Activity, Pair[])} factory
-         * method.
-         */
-        ActivityOptionsCompat activityOptions = ActivityOptionsCompat.makeSceneTransitionAnimation(
-                getActivity(),
+            // BEGIN_INCLUDE(start_activity)
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
+            startActivity(intent);
+        } else {
+            /**
+             * Now create an {@link android.app.ActivityOptions} instance using the
+             * {@link ActivityOptionsCompat#makeSceneTransitionAnimation(Activity, Pair[])} factory
+             * method.
+             */
+            ActivityOptionsCompat activityOptions = ActivityOptionsCompat.makeSceneTransitionAnimation(
+                    getActivity(),
 
-                // Now we provide a list of Pair items which contain the view we can transitioning
-                // from, and the name of the view it is transitioning to, in the launched activity
-                new Pair<View, String>(view.findViewById(R.id.imageview_item),
-                        DetailActivity.VIEW_NAME_HEADER_IMAGE),
-                new Pair<View, String>(view.findViewById(R.id.textview_name),
-                        DetailActivity.VIEW_NAME_HEADER_TITLE));
+                    // Now we provide a list of Pair items which contain the view we can transitioning
+                    // from, and the name of the view it is transitioning to, in the launched activity
+                    new Pair<View, String>(view.findViewById(R.id.imageview_item),
+                            DetailActivity.VIEW_NAME_HEADER_IMAGE),
+                    new Pair<View, String>(view.findViewById(R.id.textview_name),
+                            DetailActivity.VIEW_NAME_HEADER_TITLE));
 
-        // Now we can start the Activity, providing the activity options as a bundle
-        ActivityCompat.startActivity(getActivity(), intent, activityOptions.toBundle());
-        // END_INCLUDE(start_activity)
+            // Now we can start the Activity, providing the activity options as a bundle
+            ActivityCompat.startActivity(getActivity(), intent, activityOptions.toBundle());
+            // END_INCLUDE(start_activity)
+        }
     }
 
     // BEGIN_INCLUDE (initiate_refresh)

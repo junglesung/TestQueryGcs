@@ -34,6 +34,7 @@ import android.widget.Toast;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationAvailability;
 import com.google.android.gms.location.LocationServices;
 import com.google.gson.Gson;
 import com.squareup.picasso.Picasso;
@@ -129,19 +130,7 @@ public class CreateItemActivity extends Activity
         mButtonMore.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                Date d = new Date();
-                JSONObject a = new JSONObject();
-                try {
-                    a.put("time", d);
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                    a = null;
-                }
-                if (a != null) {
-                    Log.d(LOG_TAG, a.toString());
-                } else {
-                    Log.d(LOG_TAG, "a is null");
-                }
+                fetchLocation();
             }
         });
 
@@ -647,9 +636,17 @@ public class CreateItemActivity extends Activity
             Toast.makeText(this, "Get location failed", Toast.LENGTH_SHORT).show();
             return "";
         }
-        Toast.makeText(this, mLastLocation.toString(), Toast.LENGTH_SHORT).show();
+        Log.d(LOG_TAG, mLastLocation.toString());
         double latitude = mLastLocation.getLatitude();
         double longitude = mLastLocation.getLongitude();
+        Log.d(LOG_TAG, String.valueOf(latitude) + "," + String.valueOf(longitude));
+        LocationAvailability la = LocationServices.FusedLocationApi.getLocationAvailability(mGoogleApiClient);
+        Log.d(LOG_TAG, la.toString());
+        if (la.isLocationAvailable()) {
+            Log.d(LOG_TAG, "Location is available");
+        } else {
+            Log.d(LOG_TAG, "Location is not available");
+        }
         return String.valueOf(latitude) + "," + String.valueOf(longitude);
     }
 
@@ -754,12 +751,6 @@ public class CreateItemActivity extends Activity
                 // Make sure to close streams, otherwise "unexpected end of stream" error will happen
                 out.close();
 
-                // Check canceled
-                if (isCancelled()) {
-                    Log.d(LOG_TAG, "Sending item canceled");
-                    return null;
-                }
-
                 // Set timeout
                 urlConnection.setReadTimeout(10000 /* milliseconds */);
                 urlConnection.setConnectTimeout(15000 /* milliseconds */);
@@ -790,7 +781,7 @@ public class CreateItemActivity extends Activity
     private void sendOrCancel() {
         switch (mState) {
             case INITIAL:
-                changeState(CreateItemState.FINISHED);
+                navigateUp();
                 break;
             case UPLOADING_IMAGE:
                 changeState(CreateItemState.INITIAL);
@@ -798,12 +789,6 @@ public class CreateItemActivity extends Activity
             case READY_TO_SEND:
                 // Send metadata to GAE
                 createItem();
-                break;
-            case SENDING:
-                // Cancel sending
-                // mSendTask.cancel(false);
-                // Testing only, TODO: move to onPostExecute() in the future
-                changeState(CreateItemState.READY_TO_SEND);
                 break;
         }
     }
@@ -859,7 +844,8 @@ public class CreateItemActivity extends Activity
                 mButtonGallery.setEnabled(false);
                 mTextViewInfo.setText(R.string.sending);
                 mButtonMore.setEnabled(false);
-                mButtonSend.setText(R.string.cancel);
+                mButtonSend.setText(R.string.send);
+                mButtonSend.setEnabled(false);
                 break;
             case FINISHED:
                 showFinishDialog();

@@ -35,9 +35,8 @@
           android:id="@+id/textview_name"
           android:layout_width="match_parent"
           android:layout_height="wrap_content"
-          android:background="?android:attr/colorPrimary"
-          android:theme="@android:style/Theme.Material"
-          android:textAppearance="@android:style/TextAppearance.Material.Subhead"
+          android:background="#000000"
+          android:textColor="#ffffff"
           android:maxLines="1"
           android:padding="16dp" />
 
