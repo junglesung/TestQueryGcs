@@ -16,11 +16,14 @@
 
 package com.example.android.activityscenetransitionbasic;
 
+import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.location.LocationServices;
 import com.melnykov.fab.FloatingActionButton;
 
 import android.app.Activity;
 import android.app.FragmentTransaction;
 import android.content.Intent;
+import android.location.Location;
 import android.os.Bundle;
 import android.os.Environment;
 import android.util.Log;
@@ -36,12 +39,12 @@ import java.io.IOException;
  * user clicks on an item, {@link DetailActivity} is launched, using the Activity Scene Transitions
  * framework to animatedly do so.
  */
-public class MainActivity extends Activity {
-    private static final String LOG_TAG = "Test";
+public class MainActivity extends GoogleApiActivity {
+    private static final String LOG_TAG = "TestGood";
 
     private SwipeRefreshLayoutBasicFragment fragment;
-    FloatingActionButton fab;
-    GridView mGridView;
+    private FloatingActionButton fab;
+    private GridView mGridView;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -55,6 +58,13 @@ public class MainActivity extends Activity {
             transaction.replace(R.id.sample_content_fragment, fragment);
             transaction.commit();
         }
+
+        setOnGooglePlayServiceConnectedListener(new OnGooglePlayServiceConnectedListener() {
+            @Override
+            public void onGooglePlayServiceConnected(GoogleApiClient mGoogleApiClient) {
+                fetchLocation(mGoogleApiClient);
+            }
+        });
     }
 
     @Override
@@ -92,5 +102,24 @@ public class MainActivity extends Activity {
         //
         Intent intent = new Intent(this, CreateItemActivity.class);
         startActivity(intent);
+    }
+
+    // Get current location
+    private void fetchLocation(GoogleApiClient mGoogleApiClient) {
+        // Current location
+        Location here = null;
+        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
+            here = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+            if (here == null) {
+                Log.d(LOG_TAG, getString(R.string.get_location_failed_because_gps_is_off));
+                Toast.makeText(this, getString(R.string.get_location_failed_because_gps_is_off), Toast.LENGTH_LONG).show();
+            }
+        } else {
+            Log.d(LOG_TAG, "Google play service is not connected");
+            Toast.makeText(this, "Google play service is not connected", Toast.LENGTH_LONG).show();
+        }
+
+        // Notify fragments to update location
+        fragment.setHere(here);
     }
 }

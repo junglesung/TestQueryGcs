@@ -5,11 +5,12 @@ import org.json.JSONObject;
 
 public class Item2 {
     private String id;
+    private String image;
     private int people;
     private int attendant;
-    private String image;
+    private double latitude;  // Format "[+-]DDD.DDDDD"
+    private double longitude;  // Format "[+-]DDD.DDDDD"
     private String createtime; // RCF 3339 format "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
-    private String location; // latitude,longitude in format "[+-]DDD.DDDDD"
 
     private static final String LARGE_BASE_URL = "http://testgcsserver.appspot.com.storage.googleapis.com/testgcs/large/";
     private static final String THUMB_BASE_URL = "http://testgcsserver.appspot.com.storage.googleapis.com/testgcs/thumbs/";
@@ -21,17 +22,19 @@ public class Item2 {
 
     // Constructor
     Item2 (String _id,
+           String _image,
            int _people,
            int _attendant,
-           String _image,
-           String _createTime,
-           String _location) {
+           double _latitude,
+           double _longitude,
+           String _createTime) {
         id = _id;
+        image = _image;
         people = _people;
         attendant = _attendant;
-        image = _image;
+        latitude = _latitude;
+        longitude = _longitude;
         createtime = _createTime;
-        location = _location;
     }
 
     public String getId() {
@@ -40,6 +43,14 @@ public class Item2 {
 
     public void setId(String id) {
         this.id = id;
+    }
+
+    public String getImage() {
+        return image;
+    }
+
+    public void setImage(String image) {
+        this.image = image;
     }
 
     public int getPeople() {
@@ -58,12 +69,20 @@ public class Item2 {
         this.attendant = attendant;
     }
 
-    public String getImage() {
-        return image;
+    public double getLatitude() {
+        return latitude;
     }
 
-    public void setImage(String image) {
-        this.image = image;
+    public void setLatitude(double latitude) {
+        this.latitude = latitude;
+    }
+
+    public double getLongitude() {
+        return longitude;
+    }
+
+    public void setLongitude(double longitude) {
+        this.longitude = longitude;
     }
 
     public String getCreatetime() {
@@ -91,9 +110,11 @@ public class Item2 {
         JSONObject j = new JSONObject();
         // ID and CreateTime are determined by server. So just put other properties.
         j.put("id", id);
+        j.put("image", image);
         j.put("people", people);
         j.put("attendant", attendant);
-        j.put("image", image);
+        j.put("latitude", latitude);
+        j.put("longitude", longitude);
         // Never send CreateTime to the server because it's determined by the server.
         return j;
     }
@@ -102,9 +123,11 @@ public class Item2 {
     public String toString() {
         return "Item2{" +
                 "id='" + id + '\'' +
+                ", image='" + image + '\'' +
                 ", people=" + people +
                 ", attendant=" + attendant +
-                ", image='" + image + '\'' +
+                ", latitude=" + latitude +
+                ", longitude=" + longitude +
                 ", createtime=" + createtime +
                 '}';
     }

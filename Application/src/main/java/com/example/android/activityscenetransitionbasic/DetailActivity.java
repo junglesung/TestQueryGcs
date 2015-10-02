@@ -62,7 +62,7 @@ import javax.net.ssl.HttpsURLConnection;
  */
 public class DetailActivity extends Activity {
 
-    private static final String LOG_TAG = "Test";
+    private static final String LOG_TAG = "TestGood";
 
     // Extra name for the ID parameter
     public static final String EXTRA_PARAM_ID = "detail:_id";

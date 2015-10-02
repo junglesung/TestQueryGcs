@@ -1,13 +1,9 @@
 package com.example.android.activityscenetransitionbasic;
 
-import android.app.Activity;
 import android.app.AlertDialog;
-import android.app.Dialog;
-import android.app.DialogFragment;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.IntentSender;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
@@ -31,16 +27,9 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.common.ConnectionResult;
-import com.google.android.gms.common.GoogleApiAvailability;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationAvailability;
 import com.google.android.gms.location.LocationServices;
-import com.google.gson.Gson;
 import com.squareup.picasso.Picasso;
-
-import org.json.JSONException;
-import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -56,17 +45,14 @@ import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
 
-public class CreateItemActivity extends Activity
-        implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+public class CreateItemActivity extends GoogleApiActivity {
 
-    private static final String LOG_TAG = "Test";
+    private static final String LOG_TAG = "TestGood";
 
     // The request code to invoke a camera APP
     private static final int REQUEST_IMAGE_CAPTURE = 1;
     // The request code to choose an image
     private static final int REQUEST_IMAGE_BROWSE = 2;
-    // Request code to use when launching the resolution activity
-    private static final int REQUEST_RESOLVE_ERROR = 3;
 
     // URL
     private final String UPLOAD_IMAGE_URL = "https://testgcsserver.appspot.com/api/0.1/storeImage";
@@ -82,14 +68,6 @@ public class CreateItemActivity extends Activity
     private UploadImageTask mUploadImageTask;
     private CreateItemTask mCreateItemTask;
 
-    // Google API
-    GoogleApiClient mGoogleApiClient;
-    // Unique tag for the error dialog fragment
-    private static final String DIALOG_ERROR = "dialog_error";
-    // Bool to track whether the app is already resolving an error
-    private boolean mResolvingError = false;
-    private static final String STATE_RESOLVING_ERROR = "resolving_error";
-
     // UI
     private ImageView mImageView;
     private ImageButton mButtonCamera;
@@ -101,11 +79,6 @@ public class CreateItemActivity extends Activity
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-
-        // Recover last status
-        mResolvingError = savedInstanceState != null
-                && savedInstanceState.getBoolean(STATE_RESOLVING_ERROR, false);
-
         setContentView(R.layout.activity_create_item);
 
         mImageView = (ImageView) findViewById(R.id.imageview_create_item);
@@ -145,9 +118,6 @@ public class CreateItemActivity extends Activity
         mTextViewInfo = (TextView) findViewById(R.id.textview_information);
 
         changeState(CreateItemState.INITIAL);
-
-        // Connect to Google API
-        buildGoogleApiClient();
     }
 
     @Override
@@ -186,9 +156,6 @@ public class CreateItemActivity extends Activity
             case REQUEST_IMAGE_BROWSE:
                 onActivityResultImageBrowse(resultCode, data);
                 break;
-            case REQUEST_RESOLVE_ERROR:
-                onActivityResultApiConnectResolve(resultCode, data);
-                break;
             default:
                 //
         }
@@ -216,118 +183,6 @@ public class CreateItemActivity extends Activity
                 uploadImage();
             }
         }
-    }
-
-    private void onActivityResultApiConnectResolve(int resultCode, Intent data) {
-        mResolvingError = false;
-        if (resultCode == RESULT_OK) {
-            // Make sure the app is not already connected or attempting to connect
-            if (!mGoogleApiClient.isConnecting() &&
-                    !mGoogleApiClient.isConnected()) {
-                mGoogleApiClient.connect();
-            }
-        }
-    }
-
-    protected synchronized void buildGoogleApiClient() {
-        mGoogleApiClient = new GoogleApiClient.Builder(this)
-                .addConnectionCallbacks(this)
-                .addOnConnectionFailedListener(this)
-                .addApi(LocationServices.API)
-                .build();
-    }
-
-    @Override
-    public void onConnected(Bundle connectionHint) {
-        // Connected to Google Play services!
-        // The good stuff goes here.
-    }
-
-    @Override
-    public void onConnectionSuspended(int cause) {
-        // The connection has been interrupted.
-        // Disable any UI components that depend on Google APIs
-        // until onConnected() is called.
-    }
-
-    @Override
-    public void onConnectionFailed(ConnectionResult result) {
-        // This callback is important for handling errors that
-        // may occur while attempting to connect with Google.
-        if (mResolvingError) {
-            // Already attempting to resolve an error.
-            return;
-        }
-        if (result.hasResolution()) {
-            try {
-                mResolvingError = true;
-                result.startResolutionForResult(this, REQUEST_RESOLVE_ERROR);
-            } catch (IntentSender.SendIntentException e) {
-                // There was an error with the resolution intent. Try again.
-                mGoogleApiClient.connect();
-            }
-        } else {
-            // Show dialog using GoogleApiAvailability.getErrorDialog()
-            showErrorDialog(result.getErrorCode());
-            mResolvingError = true;
-        }
-    }
-
-    // BEGIN_INCLUDE(building the error dialog)
-    // Creates a dialog for an error message
-    private void showErrorDialog(int errorCode) {
-        // Create a fragment for the error dialog
-        ErrorDialogFragment dialogFragment = new ErrorDialogFragment();
-        // Pass the error that should be displayed
-        Bundle args = new Bundle();
-        args.putInt(DIALOG_ERROR, errorCode);
-        dialogFragment.setArguments(args);
-        dialogFragment.show(getFragmentManager(), "errordialog");
-    }
-
-    // Called from ErrorDialogFragment when the dialog is dismissed.
-    public void onDialogDismissed() {
-        mResolvingError = false;
-    }
-
-    // A fragment to display an error dialog
-    public static class ErrorDialogFragment extends DialogFragment {
-        public ErrorDialogFragment() { }
-
-        @Override
-        public Dialog onCreateDialog(Bundle savedInstanceState) {
-            // Get the error code and retrieve the appropriate dialog
-            int errorCode = this.getArguments().getInt(DIALOG_ERROR);
-            return GoogleApiAvailability.getInstance().getErrorDialog(
-                    this.getActivity(), errorCode, REQUEST_RESOLVE_ERROR);
-        }
-
-        @Override
-        public void onDismiss(DialogInterface dialog) {
-            ((CreateItemActivity) getActivity()).onDialogDismissed();
-        }
-    }
-    // END_INCLUDE(building the error dialog)
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-        // Connect to Google API
-        if (!mResolvingError) {  // more about this later
-            mGoogleApiClient.connect();
-        }
-    }
-
-    @Override
-    protected void onStop() {
-        mGoogleApiClient.disconnect();
-        super.onStop();
-    }
-
-    @Override
-    protected void onSaveInstanceState(Bundle outState) {
-        super.onSaveInstanceState(outState);
-        outState.putBoolean(STATE_RESOLVING_ERROR, mResolvingError);
     }
 
     private void uploadImage() {
@@ -626,46 +481,49 @@ public class CreateItemActivity extends Activity
         }
     }
 
-    private String fetchLocation() {
+    private Location fetchLocation() {
+        GoogleApiClient mGoogleApiClient = getGoogleApiClient();
+        // Make sure Google play service is connected in order to get location from it
         if (!mGoogleApiClient.isConnected()) {
-            return "";
+            Log.d(LOG_TAG, getString(R.string.get_location_failed_because_google_play_service_is_not_installed));
+            Toast.makeText(this, getString(R.string.get_location_failed_because_google_play_service_is_not_installed), Toast.LENGTH_LONG).show();
+            return null;
         }
+
+        // Get location from Google play service
         Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
         if (mLastLocation == null) {
-            Log.d(LOG_TAG, "Get location failed");
-            Toast.makeText(this, "Get location failed", Toast.LENGTH_SHORT).show();
-            return "";
+            Log.d(LOG_TAG, getString(R.string.get_location_failed_because_gps_is_off));
+            Toast.makeText(this, getString(R.string.get_location_failed_because_gps_is_off), Toast.LENGTH_LONG).show();
+            return null;
         }
+
+        // Vernon debug
         Log.d(LOG_TAG, mLastLocation.toString());
-        double latitude = mLastLocation.getLatitude();
-        double longitude = mLastLocation.getLongitude();
-        Log.d(LOG_TAG, String.valueOf(latitude) + "," + String.valueOf(longitude));
-        LocationAvailability la = LocationServices.FusedLocationApi.getLocationAvailability(mGoogleApiClient);
-        Log.d(LOG_TAG, la.toString());
-        if (la.isLocationAvailable()) {
-            Log.d(LOG_TAG, "Location is available");
-        } else {
-            Log.d(LOG_TAG, "Location is not available");
-        }
-        return String.valueOf(latitude) + "," + String.valueOf(longitude);
+
+        return mLastLocation;
     }
 
     private void createItem() {
         // Check network connection ability and then access Google Cloud Storage
         ConnectivityManager connMgr = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
-        if (networkInfo != null && networkInfo.isConnected()) {
-            // Prepare event data
-            // Item2.CreateTime is determined by the server. So just set an empty string.
-            Item2 item = new Item2("", 2, 1, mGcsPhotoUrl, "", fetchLocation());
-            // Change state
-            changeState(CreateItemState.SENDING);
-            // Execute uploading thread
-            mCreateItemTask = new CreateItemTask();
-            mCreateItemTask.execute(item);
-        } else {
-            Toast.makeText(this, getString(R.string.no_network_connection_available), Toast.LENGTH_SHORT).show();
+        if (networkInfo == null || !networkInfo.isConnected()) {
+            Toast.makeText(this, getString(R.string.no_network_connection_available), Toast.LENGTH_LONG).show();
+            return;
         }
+        // Prepare event data
+        Location location = fetchLocation();
+        if (location == null) {
+            return;
+        }
+        // Item2.CreateTime is determined by the server. So just set an empty string.
+        Item2 item = new Item2("", mGcsPhotoUrl, 2, 1, location.getLatitude(), location.getLongitude(), "");
+        // Change state
+        changeState(CreateItemState.SENDING);
+        // Execute uploading thread
+        mCreateItemTask = new CreateItemTask();
+        mCreateItemTask.execute(item);
     }
 
     /**

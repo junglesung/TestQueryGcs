@@ -63,5 +63,7 @@
     <string name="no_app_to_choose_an_image">No APP to choose an image</string>
     <string name="no_network_connection_available">No network connection available</string>
     <string name="connection_error">Connection error</string>
+    <string name="get_location_failed_because_google_play_service_is_not_installed">Get location failed. Please make sure Google play service is running.</string>
+    <string name="get_location_failed_because_gps_is_off">Get location failed. Please make sure GPS is ON.</string>
 
 </resources>

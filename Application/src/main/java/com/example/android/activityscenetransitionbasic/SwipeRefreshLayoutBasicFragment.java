@@ -19,6 +19,7 @@ package com.example.android.activityscenetransitionbasic;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
@@ -43,6 +44,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
@@ -68,8 +70,13 @@ import javax.net.ssl.HttpsURLConnection;
  */
 public class SwipeRefreshLayoutBasicFragment extends Fragment {
 
-    private static final String LOG_TAG = "Test";
+    private static final String LOG_TAG = "TestGood";
 
+    // To use Google play service such as Location API
+    GoogleApiClient mGoogleApiClient;
+    // Current location
+    Location here;
+    // Item list
     private Item2[] items;
 
     // Threads
@@ -91,6 +98,8 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
 //        setHasOptionsMenu(true);
 
         // Initial variables
+        mGoogleApiClient = ((GoogleApiActivity)getActivity()).getGoogleApiClient();
+        here = null;
         items = null;
         mQueryItemTask = null;
     }
@@ -270,6 +279,20 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
     }
     // END_INCLUDE (refresh_complete)
 
+    public void setHere(Location here) {
+        this.here = here;
+        // New location
+        if (here == null) {
+            Log.d(LOG_TAG, "New location is null");
+        } else {
+            Log.d(LOG_TAG, "New location " +
+                    String.valueOf(here.getLatitude()) + "," +
+                    String.valueOf(here.getLongitude()));
+        }
+        // Remove all items from the ListAdapter, and then replace them with the new items
+        mAdapter.notifyDataSetChanged();
+    }
+
     // Get the latest items from the server in background
     private class QueryItemTask extends AsyncTask<Void, Void, Item2[]> {
 
@@ -386,9 +409,24 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
             ImageView image = (ImageView) view.findViewById(R.id.imageview_item);
             Picasso.with(image.getContext()).load(item.getThumbnailUrl()).into(image);
 
+            // Calculate distance
+            int meters = -1;
+            float results[] = new float[1];
+            double dstLatitude = item.getLatitude();
+            double dstLongitude = item.getLongitude();
+            if (here != null && dstLatitude != 0 && dstLongitude != 0) {
+                Location.distanceBetween(here.getLatitude(), here.getLongitude(),
+                                       dstLatitude, dstLongitude, results);
+                meters = (int) results[0];
+            }
+
             // Set the TextView's contents
             TextView name = (TextView) view.findViewById(R.id.textview_name);
-            name.setText(item.getAttendant() + "/" + item.getPeople());
+            if (meters == -1) {
+                name.setText(item.getAttendant() + "/" + item.getPeople());
+            } else {
+                name.setText(item.getAttendant() + "/" + item.getPeople() + "    " + meters + "m");
+            }
 
             return view;
         }
