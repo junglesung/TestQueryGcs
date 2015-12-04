@@ -1,4 +1,4 @@
-package com.example.android.activityscenetransitionbasic;
+package com.vernonsung.testquerygcs;
 
 import android.app.Activity;
 import android.app.Dialog;

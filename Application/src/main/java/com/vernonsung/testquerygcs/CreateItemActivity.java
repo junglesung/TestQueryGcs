@@ -1,4 +1,4 @@
-package com.example.android.activityscenetransitionbasic;
+package com.vernonsung.testquerygcs;
 
 import android.app.AlertDialog;
 import android.content.Context;
@@ -55,8 +55,8 @@ public class CreateItemActivity extends GoogleApiActivity {
     private static final int REQUEST_IMAGE_BROWSE = 2;
 
     // URL
-    private final String UPLOAD_IMAGE_URL = "https://testgcsserver.appspot.com/api/0.1/storeImage";
-    private final String CREATE_ITEM_URL = "https://testgcsserver.appspot.com/api/0.1/items";
+    private final String UPLOAD_IMAGE_URL = "https://aliza-1148.appspot.com/api/0.1/storeImage";
+    private final String CREATE_ITEM_URL = "https://aliza-1148.appspot.com/api/0.1/items";
     // Current image path
     private Uri mCurrentPhotoUri;
     private String mGcsPhotoUrl;
@@ -662,7 +662,7 @@ public class CreateItemActivity extends GoogleApiActivity {
         switch (state) {
             case INITIAL:
                 // Set UI
-                Picasso.with(this).load("http://testgcsserver.appspot.com.storage.googleapis.com/ImageFrame.png").into(mImageView);
+                Picasso.with(this).load("http://aliza-1148.appspot.com.storage.googleapis.com/ImageFrame.png").into(mImageView);
                 mButtonCamera.setEnabled(true);
                 mButtonGallery.setEnabled(true);
                 mTextViewInfo.setText(R.string.select_or_take_a_photo);

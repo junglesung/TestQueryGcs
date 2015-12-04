@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.android.activityscenetransitionbasic;
+package com.vernonsung.testquerygcs;
 
 import android.content.Context;
 import android.util.AttributeSet;

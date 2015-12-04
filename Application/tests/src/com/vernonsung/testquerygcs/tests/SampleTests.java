@@ -13,9 +13,9 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package com.example.android.activityscenetransitionbasic.tests;
+package com.vernonsung.testquerygcs.tests;
 
-import com.example.android.activityscenetransitionbasic.*;
+import com.vernonsung.testquerygcs.*;
 
 import android.test.ActivityInstrumentationTestCase2;
 

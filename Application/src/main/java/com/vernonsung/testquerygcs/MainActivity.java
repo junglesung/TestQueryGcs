@@ -14,25 +14,20 @@
  * limitations under the License.
  */
 
-package com.example.android.activityscenetransitionbasic;
+package com.vernonsung.testquerygcs;
 
 import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.location.LocationServices;
 import com.melnykov.fab.FloatingActionButton;
 
-import android.app.Activity;
 import android.app.FragmentTransaction;
 import android.content.Intent;
 import android.location.Location;
 import android.os.Bundle;
-import android.os.Environment;
 import android.util.Log;
 import android.view.View;
 import android.widget.GridView;
 import android.widget.Toast;
-
-import java.io.File;
-import java.io.IOException;
 
 /**
  * Our main Activity in this sample. Displays a grid of items which an image and title. When the

@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.android.activityscenetransitionbasic;
+package com.vernonsung.testquerygcs;
 
 /**
  * Represents an Item in our application. Each item has a name, id, full size image url and

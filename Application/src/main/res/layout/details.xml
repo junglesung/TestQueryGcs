@@ -22,7 +22,7 @@
         android:layout_height="wrap_content"
         android:orientation="vertical">
 
-        <com.example.android.activityscenetransitionbasic.SquareFrameLayout
+        <com.vernonsung.testquerygcs.SquareFrameLayout
             android:id="@+id/frame_image"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -37,7 +37,7 @@
                 android:layout_height="match_parent"
                 android:scaleType="centerCrop" />
 
-        </com.example.android.activityscenetransitionbasic.SquareFrameLayout>
+        </com.vernonsung.testquerygcs.SquareFrameLayout>
 
         <TextView
             android:id="@+id/textview_title"

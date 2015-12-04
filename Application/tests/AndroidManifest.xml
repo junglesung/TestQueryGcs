@@ -16,7 +16,7 @@
   -->
 <!-- package name must be unique so suffix with "tests" so package loader doesn't ignore us -->
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-          package="com.example.android.activityscenetransitionbasic.tests"
+          package="com.vernonsung.testquerygcs.tests"
           android:versionCode="1"
           android:versionName="1.0">
 
@@ -34,7 +34,7 @@
     -->
     <instrumentation
             android:name="android.test.InstrumentationTestRunner"
-            android:targetPackage="com.example.android.activityscenetransitionbasic"
-            android:label="Tests for com.example.android.activityscenetransitionbasic" />
+            android:targetPackage="com.vernonsung.testquerygcs"
+            android:label="Tests for com.vernonsung.testquerygcs" />
 
 </manifest>

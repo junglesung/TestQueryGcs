@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-package com.example.android.activityscenetransitionbasic;
+package com.vernonsung.testquerygcs;
 
 import android.app.Activity;
 import android.content.Context;
@@ -296,11 +296,12 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
     // Get the latest items from the server in background
     private class QueryItemTask extends AsyncTask<Void, Void, Item2[]> {
 
-        static final String QUERY_ITEM_URL = "https://testgcsserver.appspot.com/api/0.1/items";
+        static final String QUERY_ITEM_URL = "https://aliza-1148.appspot.com/api/0.1/items";
 
         @Override
         protected Item2[] doInBackground(Void... params) {
             return getItems();
+//            return null;
         }
 
         @Override
@@ -342,6 +343,7 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
                 // Get items from body
                 InputStreamReader in = new InputStreamReader(urlConnection.getInputStream());
                 items = new Gson().fromJson(in, Item2[].class);
+                in.close();
 
                 // Vernon debug
                 for (Item2 i: items) {

@@ -1,4 +1,4 @@
-package com.example.android.activityscenetransitionbasic;
+package com.vernonsung.testquerygcs;
 
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -12,8 +12,8 @@ public class Item2 {
     private double longitude;  // Format "[+-]DDD.DDDDD"
     private String createtime; // RCF 3339 format "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
 
-    private static final String LARGE_BASE_URL = "http://testgcsserver.appspot.com.storage.googleapis.com/testgcs/large/";
-    private static final String THUMB_BASE_URL = "http://testgcsserver.appspot.com.storage.googleapis.com/testgcs/thumbs/";
+    private static final String LARGE_BASE_URL = "http://aliza-1148.appspot.com.storage.googleapis.com/testgcs/large/";
+    private static final String THUMB_BASE_URL = "http://aliza-1148.appspot.com.storage.googleapis.com/testgcs/thumbs/";
 
     // Default constructor
     Item2() {

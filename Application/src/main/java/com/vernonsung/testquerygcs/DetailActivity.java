@@ -14,11 +14,9 @@
  * limitations under the License.
  */
 
-package com.example.android.activityscenetransitionbasic;
+package com.vernonsung.testquerygcs;
 
 import com.google.gson.Gson;
-import com.google.gson.JsonIOException;
-import com.google.gson.JsonSyntaxException;
 import com.squareup.picasso.Picasso;
 
 import android.app.Activity;
@@ -41,11 +39,8 @@ import android.widget.Toast;
 import org.json.JSONObject;
 
 import java.io.BufferedOutputStream;
-import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
 import java.net.URL;
 import java.text.DateFormat;
 import java.text.ParseException;
@@ -269,7 +264,7 @@ public class DetailActivity extends Activity {
 
     // Get the latest items from the server in background
     private class UpdateItemTask extends AsyncTask<Integer, Void, Integer> {
-        static final String UPDATE_ITEM_URL = "https://testgcsserver.appspot.com/api/0.1/items";
+        static final String UPDATE_ITEM_URL = "https://aliza-1148.appspot.com/api/0.1/items";
         private int change;
 
         @Override
