@@ -1,0 +1,73 @@
+{
+  "project_info": {
+    "project_id": "aliza-1148",
+    "project_number": "492596673998",
+    "name": "Aliza"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:492596673998:android:ca4b2604ffa0cbc7",
+        "client_id": "android:com.vernonsong.tamir",
+        "client_type": 1,
+        "android_client_info": {
+          "package_name": "com.vernonsong.tamir"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "cloud_messaging_service": {
+          "status": 2,
+          "apns_config": []
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "google_signin_service": {
+          "status": 1
+        },
+        "ads_service": {
+          "status": 1
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:492596673998:android:8709071c2e0dcec8",
+        "client_id": "android:com.vernonsung.testquerygcs",
+        "client_type": 1,
+        "android_client_info": {
+          "package_name": "com.vernonsung.testquerygcs"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "cloud_messaging_service": {
+          "status": 2,
+          "apns_config": []
+        },
+        "appinvite_service": {
+          "status": 1,
+          "other_platform_oauth_client": []
+        },
+        "google_signin_service": {
+          "status": 1
+        },
+        "ads_service": {
+          "status": 1
+        }
+      }
+    }
+  ],
+  "client_info": [],
+  "ARTIFACT_VERSION": "1"
+}
