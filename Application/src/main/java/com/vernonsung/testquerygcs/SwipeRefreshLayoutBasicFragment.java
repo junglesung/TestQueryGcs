@@ -343,12 +343,6 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
                 // Get items from body
                 InputStreamReader in = new InputStreamReader(urlConnection.getInputStream());
                 items = new Gson().fromJson(in, Item2[].class);
-                in.close();
-
-                // Vernon debug
-                for (Item2 i: items) {
-                    Log.d(LOG_TAG, i.toString());
-                }
             } catch (JsonIOException e) {
                 e.printStackTrace();
                 Log.e(LOG_TAG, "Network may be unavailable while querying items");
@@ -361,15 +355,22 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
             } catch (IOException e) {
                 e.printStackTrace();
                 Log.e(LOG_TAG, "Querying items failed");
+            } catch (Exception e) {
+                e.printStackTrace();
+                Log.e(LOG_TAG, "Unhandled exception " + e.toString());
             } finally {
                 if (urlConnection != null) {
                     urlConnection.disconnect();
                 }
             }
             if (items == null) {
-                Log.d(LOG_TAG, "Querying items failed");
+                Log.d(LOG_TAG, "Got 0 item");
             } else {
                 Log.d(LOG_TAG, "Got " + items.length + "items");
+                // Vernon debug
+                for (Item2 i : items) {
+                    Log.d(LOG_TAG, i.toString());
+                }
             }
 
             return items;
