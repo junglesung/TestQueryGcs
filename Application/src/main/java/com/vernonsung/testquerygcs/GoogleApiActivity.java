@@ -1,6 +1,5 @@
 package com.vernonsung.testquerygcs;
 
-import android.app.Activity;
 import android.app.Dialog;
 import android.app.DialogFragment;
 import android.content.DialogInterface;
@@ -17,7 +16,7 @@ import com.google.android.gms.location.LocationServices;
  * This is a convenient class to let an activity connect to Google play service.
  * Inherit this and set OnGooglePlayServiceConnectedListener which should be called after connected.
  */
-public class GoogleApiActivity extends Activity
+public class GoogleApiActivity extends GoogleCloudMessagingActivity
         implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     public interface OnGooglePlayServiceConnectedListener {
