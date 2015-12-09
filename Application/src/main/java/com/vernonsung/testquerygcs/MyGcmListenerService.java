@@ -30,7 +30,7 @@ import com.google.android.gms.gcm.GcmListenerService;
 
 public class MyGcmListenerService extends GcmListenerService {
 
-    private static final String TAG = "MyGcmListenerService";
+    private static final String LOG_TAG = "TestGood";
 
     /**
      * Called when message is received.
@@ -43,8 +43,8 @@ public class MyGcmListenerService extends GcmListenerService {
     @Override
     public void onMessageReceived(String from, Bundle data) {
         String message = data.getString("message");
-        Log.d(TAG, "From: " + from);
-        Log.d(TAG, "Message: " + message);
+        Log.d(LOG_TAG, "From: " + from);
+        Log.d(LOG_TAG, "Message: " + message);
 
         if (from.startsWith("/topics/")) {
             // message received from some topic.

@@ -21,7 +21,7 @@ public class GoogleCloudMessagingActivity extends Activity {
     private BroadcastReceiver mRegistrationBroadcastReceiver;
 
     // Constants
-    private static final String LOG_TAG = "testGood";
+    private static final String LOG_TAG = "TestGood";
     // Time to resolve Google Play service unavailability
     private static final int PLAY_SERVICES_RESOLUTION_REQUEST = 9000;
 
@@ -36,10 +36,10 @@ public class GoogleCloudMessagingActivity extends Activity {
                 String action = intent.getAction();
                 switch (action) {
                     case MyConstants.REGISTRATION_COMPLETE:
-//                        showToken();
+                        showToken();
                         break;
                     case MyConstants.UNREGISTRATION_COMPLETE:
-//                        showToken();
+                        showToken();
                         break;
                     case MyConstants.SUBSCRIPTION_COMPLETE:
                         Toast.makeText(getApplicationContext(), "Subscribe topic successfully", Toast.LENGTH_SHORT).show();
@@ -52,6 +52,7 @@ public class GoogleCloudMessagingActivity extends Activity {
                 }
             }
         };
+        fetchToken();
     }
 
     @Override
@@ -81,6 +82,15 @@ public class GoogleCloudMessagingActivity extends Activity {
             startService(intent);
         }
     }
+
+    private void showToken() {
+        SharedPreferences sharedPreferences =
+                PreferenceManager.getDefaultSharedPreferences(this);
+        String token = sharedPreferences.getString(MyConstants.REGISTRATION_TOKEN, "deleted");
+        Log.d(LOG_TAG, "Token should be shown");
+        Toast.makeText(this, "Token is " + token, Toast.LENGTH_LONG).show();
+    }
+
     public void subscribeTopic(String topic) {
         if (topic.isEmpty()) {
             Toast.makeText(this, "Please give a topic name", Toast.LENGTH_SHORT).show();
@@ -150,7 +160,8 @@ public class GoogleCloudMessagingActivity extends Activity {
                 apiAvailability.getErrorDialog(this, resultCode, PLAY_SERVICES_RESOLUTION_REQUEST)
                         .show();
             } else {
-                Log.i(LOG_TAG, "This device is not supported.");
+                Log.i(LOG_TAG, "This device does not support Google Play Services.");
+                Toast.makeText(this, "This device does not support Google Play Services.", Toast.LENGTH_LONG).show();
                 finish();
             }
             return false;

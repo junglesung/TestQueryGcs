@@ -33,7 +33,7 @@ import javax.net.ssl.HttpsURLConnection;
  */
 public class RegistrationIntentService extends IntentService {
 
-    private static final String LOG_TAG = "testGood";
+    private static final String LOG_TAG = "TestGood";
 
     public RegistrationIntentService() {
         super("RegistrationIntentService");
@@ -72,6 +72,9 @@ public class RegistrationIntentService extends IntentService {
             // are local.
             // [START get_token]
             InstanceID instanceID = InstanceID.getInstance(this);
+
+            // Vernon debug. Delete old ID before getting a new one
+            // instanceID.deleteInstanceID();
 
             // gcm_defaultSenderId comes from google-services.json automatically through Android Studio compiler
             String newToken = instanceID.getToken(getString(R.string.gcm_defaultSenderId),
@@ -198,6 +201,11 @@ public class RegistrationIntentService extends IntentService {
             // Set timeout
             urlConnection.setReadTimeout(MyConstants.URL_CONNECTION_READ_TIMEOUT);
             urlConnection.setConnectTimeout(MyConstants.URL_CONNECTION_CONNECT_TIMEOUT);
+
+            // Vernon debug
+            Log.d(LOG_TAG, urlConnection.getRequestMethod() + " " +
+                           urlConnection.getURL().toString() + " " +
+                           new String(data));
 
             // Send and get response
             // getResponseCode() will automatically trigger connect()
