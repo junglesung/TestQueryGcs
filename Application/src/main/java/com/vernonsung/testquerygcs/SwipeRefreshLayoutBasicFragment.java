@@ -301,7 +301,6 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
         @Override
         protected Item2[] doInBackground(Void... params) {
             return getItems();
-//            return null;
         }
 
         @Override
