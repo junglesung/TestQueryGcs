@@ -75,6 +75,9 @@ public class RegistrationIntentService extends IntentService {
 
             // Vernon debug. Delete old ID before getting a new one
             // instanceID.deleteInstanceID();
+            // Vernon debug. Or delete old token before getting a new one
+            // instanceID.deleteToken(getString(R.string.gcm_defaultSenderId),
+            //        GoogleCloudMessaging.INSTANCE_ID_SCOPE);
 
             // gcm_defaultSenderId comes from google-services.json automatically through Android Studio compiler
             String newToken = instanceID.getToken(getString(R.string.gcm_defaultSenderId),
