@@ -3,14 +3,57 @@ package com.vernonsung.testquerygcs;
 import org.json.JSONException;
 import org.json.JSONObject;
 
+import java.util.Arrays;
+
+
 public class Item2 {
-    private String id;          // Datastore ID of item kind
-    private String image;       // Google Cloud Storage file URL
-    private int people;         // Satisfied people number
-    private int attendant;      // Delta people number
-    private double latitude;    // Format "[+-]DDD.DDDDD"
-    private double longitude;   // Format "[+-]DDD.DDDDD"
-    private String createtime;  // RCF 3339 format "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
+    public class ItemMember {
+        private String userkey;    // Datastore ID of an user
+        private int    attendant;  // How many the user attends
+
+        // Default constructor
+        public ItemMember() {
+        }
+
+        // Constructor
+        public ItemMember(String userkey, int attendant) {
+            this.userkey = userkey;
+            this.attendant = attendant;
+        }
+
+        public String getUserkey() {
+            return userkey;
+        }
+
+        public void setUserkey(String userkey) {
+            this.userkey = userkey;
+        }
+
+        public int getAttendant() {
+            return attendant;
+        }
+
+        public void setAttendant(int attendant) {
+            this.attendant = attendant;
+        }
+
+        @Override
+        public String toString() {
+            return "ItemMember{" +
+                    "userkey='" + userkey + '\'' +
+                    ", attendant=" + attendant +
+                    '}';
+        }
+    }
+
+    private String id;             // Datastore ID of item kind
+    private String image;          // Google Cloud Storage file URL
+    private int people;            // Satisfied people number
+    private int attendant;         // Delta people number
+    private double latitude;       // Format "[+-]DDD.DDDDD"
+    private double longitude;      // Format "[+-]DDD.DDDDD"
+    private String createtime;     // RCF 3339 format "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
+    private ItemMember members[];  // The users who attended this item
 
     private static final String LARGE_BASE_URL = "http://aliza-1148.appspot.com.storage.googleapis.com/testgcs/large/";
     private static final String THUMB_BASE_URL = "http://aliza-1148.appspot.com.storage.googleapis.com/testgcs/thumbs/";
@@ -21,20 +64,22 @@ public class Item2 {
     }
 
     // Constructor
-    Item2 (String _id,
-           String _image,
-           int _people,
-           int _attendant,
-           double _latitude,
-           double _longitude,
-           String _createTime) {
-        id = _id;
-        image = _image;
-        people = _people;
-        attendant = _attendant;
-        latitude = _latitude;
-        longitude = _longitude;
-        createtime = _createTime;
+    public Item2(String id,
+                 String image,
+                 int people,
+                 int attendant,
+                 double latitude,
+                 double longitude,
+                 String createtime,
+                 ItemMember[] members) {
+        this.id = id;
+        this.image = image;
+        this.people = people;
+        this.attendant = attendant;
+        this.latitude = latitude;
+        this.longitude = longitude;
+        this.createtime = createtime;
+        this.members = members;
     }
 
     public String getId() {
@@ -93,6 +138,14 @@ public class Item2 {
         this.createtime = createtime;
     }
 
+    public ItemMember[] getMembers() {
+        return members;
+    }
+
+    public void setMembers(ItemMember[] members) {
+        this.members = members;
+    }
+
     public String getPhotoUrl() {
 //        return LARGE_BASE_URL + image;
         return image;
@@ -109,7 +162,6 @@ public class Item2 {
     public JSONObject toJSONObject() throws JSONException {
         JSONObject j = new JSONObject();
         // ID and CreateTime are determined by server. So just put other properties.
-        j.put("id", id);
         j.put("image", image);
         j.put("people", people);
         j.put("attendant", attendant);
@@ -128,7 +180,8 @@ public class Item2 {
                 ", attendant=" + attendant +
                 ", latitude=" + latitude +
                 ", longitude=" + longitude +
-                ", createtime=" + createtime +
+                ", createtime='" + createtime + '\'' +
+                ", members=" + Arrays.toString(members) +
                 '}';
     }
 }

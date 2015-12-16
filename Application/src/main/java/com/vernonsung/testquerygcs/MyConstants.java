@@ -1,14 +1,21 @@
 package com.vernonsung.testquerygcs;
 
 public class MyConstants {
-    public static final String SENT_TOKEN_TO_SERVER = "sentTokenToServer";
-    public static final String REGISTRATION_TOKEN = "registrationToken";
+    // Shared preference
+    public static final String REGISTRATION_TOKEN = "registrationToken";  // String. Google Cloud Messaging registration token
+    public static final String USER_ID = "userId";  // String. Google APP Engine Datastore user ID
+    public static final String SENT_TOKEN_TO_SERVER = "sentTokenToServer";  // boolean. Indicate whether the registration token has been sent to Google APP Engine server
+
+    // Broadcast intent
     public static final String REGISTRATION_COMPLETE = "registrationComplete";
     public static final String UNREGISTRATION_COMPLETE = "unregistrationComplete";
     public static final String SUBSCRIPTION_COMPLETE = "subscriptionComplete";
     public static final String UNSUBSCRIBING_COMPLETE = "unsubscribingComplete";
-    public static final String USER_ID = "userId";
+
+    // Intent extra data
     public static final String TOPIC = "topic";
+
+    // Intent action
     public static final String ACTION_GET_TOKEN = "actionGetToken";
     public static final String ACTION_DELETE_TOKEN = "actionDeleteToken";
     public static final String ACTION_SUBSCRIBE_TOPIC = "actionSubscribeTopic";

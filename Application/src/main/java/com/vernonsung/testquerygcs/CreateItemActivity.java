@@ -4,6 +4,7 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.content.pm.ResolveInfo;
 import android.database.Cursor;
@@ -14,6 +15,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.Environment;
+import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.support.v4.app.NavUtils;
@@ -28,6 +30,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.iid.InstanceID;
 import com.google.android.gms.location.LocationServices;
 import com.squareup.picasso.Picasso;
 
@@ -505,6 +508,14 @@ public class CreateItemActivity extends GoogleApiActivity {
     }
 
     private void createItem() {
+        // Check Google Instance ID registration
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean isTokenSentToServer = sharedPreferences.getBoolean(MyConstants.SENT_TOKEN_TO_SERVER, false);
+        if (!isTokenSentToServer) {
+            Toast.makeText(this, getString(R.string.app_is_not_registered_please_check_internet_and_retry_later), Toast.LENGTH_LONG).show();
+            return;
+        }
+
         // Check network connection ability and then access Google Cloud Storage
         ConnectivityManager connMgr = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
@@ -518,7 +529,7 @@ public class CreateItemActivity extends GoogleApiActivity {
             return;
         }
         // Item2.CreateTime is determined by the server. So just set an empty string.
-        Item2 item = new Item2("", mGcsPhotoUrl, 2, 1, location.getLatitude(), location.getLongitude(), "");
+        Item2 item = new Item2("", mGcsPhotoUrl, 2, 1, location.getLatitude(), location.getLongitude(), "", null);
         // Change state
         changeState(CreateItemState.SENDING);
         // Execute uploading thread
@@ -582,6 +593,8 @@ public class CreateItemActivity extends GoogleApiActivity {
             OutputStream out;
             String itemUrl = null;
 
+            // Set authentication instance ID
+            urlConnection.setRequestProperty(MyConstants.HTTP_HEADER_INSTANCE_ID, InstanceID.getInstance(getApplicationContext()).getId());
             // Set content type
             urlConnection.setRequestProperty("Content-Type", "application/json");
 
