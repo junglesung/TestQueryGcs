@@ -19,12 +19,14 @@ package com.vernonsung.testquerygcs;
 import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.ActivityOptionsCompat;
 import android.app.Fragment;
@@ -45,6 +47,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import com.google.android.gms.common.api.GoogleApiClient;
+import com.google.android.gms.iid.InstanceID;
 import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
@@ -78,6 +81,8 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
     Location here;
     // Item list
     private Item2[] items;
+    // Automatically retry when network is OK.
+    boolean flagRefreshNeeded;
 
     // Threads
     private QueryItemTask mQueryItemTask;
@@ -101,6 +106,7 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
         mGoogleApiClient = ((GoogleApiActivity)getActivity()).getGoogleApiClient();
         here = null;
         items = null;
+        flagRefreshNeeded = true;
         mQueryItemTask = null;
     }
 
@@ -196,8 +202,6 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
     @Override
     public void onStart() {
         super.onStart();
-        // Get the latest items from server
-        initiateRefresh();
     }
 
     /**
@@ -244,16 +248,39 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
         }
     }
 
+    // Refresh if needed
+    public void tryRefresh() {
+        if (!mSwipeRefreshLayout.isRefreshing() && flagRefreshNeeded) {
+            initiateRefresh();
+        }
+    }
+
     // BEGIN_INCLUDE (initiate_refresh)
     /**
      * By abstracting the refresh process to a single method, the app allows both the
      * SwipeGestureLayout onRefresh() method and the Refresh action item to refresh the content.
      */
     private void initiateRefresh() {
+        flagRefreshNeeded = true;
+
+        // Check Google Instance ID registration
+        Activity activity = getActivity();
+        if (activity == null) {
+            return;
+        }
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
+        boolean isTokenSentToServer = sharedPreferences.getBoolean(MyConstants.SENT_TOKEN_TO_SERVER, false);
+        if (!isTokenSentToServer) {
+            Toast.makeText(activity, getString(R.string.app_is_not_registered_please_check_internet_and_retry_later), Toast.LENGTH_LONG).show();
+            return;
+        }
+
         // Check network connection ability and then access Google Cloud Storage
         ConnectivityManager connMgr = (ConnectivityManager)getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
         if (networkInfo != null && networkInfo.isConnected()) {
+            // We make sure that the SwipeRefreshLayout is displaying it's refreshing indicator
+            mSwipeRefreshLayout.setRefreshing(true);
             // Execute querying thread
             mQueryItemTask = new QueryItemTask();
             mQueryItemTask.execute();
@@ -276,6 +303,9 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
 
         // Stop the refreshing indicator
         mSwipeRefreshLayout.setRefreshing(false);
+
+        // Set flag
+        flagRefreshNeeded = false;
     }
     // END_INCLUDE (refresh_complete)
 
@@ -323,12 +353,18 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
                 url = new URL(QUERY_ITEM_URL);
                 urlConnection = (HttpsURLConnection) url.openConnection();
 
+                // Set authentication instance ID
+                urlConnection.setRequestProperty(MyConstants.HTTP_HEADER_INSTANCE_ID, InstanceID.getInstance(getActivity()).getId());
                 // Set content type
                 urlConnection.setRequestProperty("Content-Type", "application/json");
 
                 // Set timeout
                 urlConnection.setReadTimeout(10000 /* milliseconds */);
                 urlConnection.setConnectTimeout(15000 /* milliseconds */);
+
+                // Vernon debug
+                Log.d(LOG_TAG, urlConnection.getRequestMethod() + " " +
+                               urlConnection.getURL().toString());
 
                 // Send and get response
                 // getResponseCode() will automatically trigger connect()

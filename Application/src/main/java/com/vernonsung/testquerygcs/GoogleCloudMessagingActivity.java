@@ -36,10 +36,10 @@ public class GoogleCloudMessagingActivity extends Activity {
                 String action = intent.getAction();
                 switch (action) {
                     case MyConstants.REGISTRATION_COMPLETE:
-                        showToken();
+                        onGcmRegistrationComplete();
                         break;
                     case MyConstants.UNREGISTRATION_COMPLETE:
-                        showToken();
+                        onGcmUnregistrationComplete();
                         break;
                     case MyConstants.SUBSCRIPTION_COMPLETE:
                         Toast.makeText(getApplicationContext(), "Subscribe topic successfully", Toast.LENGTH_SHORT).show();
@@ -83,12 +83,22 @@ public class GoogleCloudMessagingActivity extends Activity {
         }
     }
 
-    private void showToken() {
+    protected void showToken() {
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this);
         String token = sharedPreferences.getString(MyConstants.REGISTRATION_TOKEN, "deleted");
         Log.d(LOG_TAG, "Token should be shown");
         Toast.makeText(this, "Token is " + token, Toast.LENGTH_LONG).show();
+    }
+
+    // Trigger when a broadcast intent with action REGISTRATION_COMPLETE is received
+    protected void onGcmRegistrationComplete() {
+        showToken();
+    }
+
+    // Trigger when a broadcast intent with action UNREGISTRATION_COMPLETE is received
+    protected void onGcmUnregistrationComplete() {
+        showToken();
     }
 
     public void subscribeTopic(String topic) {

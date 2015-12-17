@@ -523,6 +523,7 @@ public class CreateItemActivity extends GoogleApiActivity {
             Toast.makeText(this, getString(R.string.no_network_connection_available), Toast.LENGTH_LONG).show();
             return;
         }
+
         // Prepare event data
         Location location = fetchLocation();
         if (location == null) {
@@ -530,6 +531,7 @@ public class CreateItemActivity extends GoogleApiActivity {
         }
         // Item2.CreateTime is determined by the server. So just set an empty string.
         Item2 item = new Item2("", mGcsPhotoUrl, 2, 1, location.getLatitude(), location.getLongitude(), "", null);
+
         // Change state
         changeState(CreateItemState.SENDING);
         // Execute uploading thread

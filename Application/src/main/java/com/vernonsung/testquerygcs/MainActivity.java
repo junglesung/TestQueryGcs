@@ -93,6 +93,12 @@ public class MainActivity extends GoogleApiActivity {
         }
     }
 
+    @Override
+    protected void onGcmRegistrationComplete() {
+        super.onGcmRegistrationComplete();
+        fragment.tryRefresh();
+    }
+
     private void createItem() {
         //
         Intent intent = new Intent(this, CreateItemActivity.class);
