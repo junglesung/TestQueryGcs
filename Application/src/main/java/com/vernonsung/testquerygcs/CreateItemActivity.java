@@ -277,6 +277,8 @@ public class CreateItemActivity extends GoogleApiActivity {
             InputStream in = null;
             String imageUrl = null;
 
+            // Set authentication instance ID
+            urlConnection.setRequestProperty(MyConstants.HTTP_HEADER_INSTANCE_ID, InstanceID.getInstance(getApplicationContext()).getId());
             // Set content type
             urlConnection.setRequestProperty("Content-Type", "image/jpeg");
 
