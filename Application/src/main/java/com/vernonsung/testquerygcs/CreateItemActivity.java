@@ -298,7 +298,12 @@ public class CreateItemActivity extends GoogleApiActivity {
                 // Get the OutputStream of HTTP client
                 out = new BufferedOutputStream(urlConnection.getOutputStream());
                 // Get the InputStream of the file
-                in = new BufferedInputStream(getContentResolver().openInputStream(uri));
+                InputStream inputstream = getContentResolver().openInputStream(uri);
+                if (inputstream == null) {
+                    Log.d(LOG_TAG, "Can't open image file");
+                    return null;
+                }
+                in = new BufferedInputStream(inputstream);
                 // Copy from file to the HTTP client
                 int byte_;
                 int bytes = 0;
@@ -532,7 +537,12 @@ public class CreateItemActivity extends GoogleApiActivity {
             return;
         }
         // Item2.CreateTime is determined by the server. So just set an empty string.
-        Item2 item = new Item2("", mGcsPhotoUrl, 2, 1, location.getLatitude(), location.getLongitude(), "", null);
+        Item2 item = new Item2();
+        item.setImage(mGcsPhotoUrl);
+        item.setPeople(2);
+        item.setAttendant(1);
+        item.setLatitude(location.getLatitude());
+        item.setLongitude(location.getLongitude());
 
         // Change state
         changeState(CreateItemState.SENDING);

@@ -16,6 +16,7 @@
 
 package com.vernonsung.testquerygcs;
 
+import com.google.android.gms.iid.InstanceID;
 import com.google.gson.Gson;
 import com.squareup.picasso.Picasso;
 
@@ -288,6 +289,7 @@ public class DetailActivity extends Activity {
             // Update memory
             mItem.setAttendant(mItem.getAttendant() + _change);
             // Update UI
+            // TODO: Check whether the item is deleted because the user as the owner left
             mHeaderTitle.setText(mItem.getAttendant() + "/" + mItem.getPeople());
         }
 
@@ -306,6 +308,8 @@ public class DetailActivity extends Activity {
                 url = new URL(itemUrl);
                 urlConnection = (HttpsURLConnection) url.openConnection();
 
+                // Set authentication instance ID
+                urlConnection.setRequestProperty(MyConstants.HTTP_HEADER_INSTANCE_ID, InstanceID.getInstance(getApplicationContext()).getId());
                 // Set content type
                 urlConnection.setRequestProperty("Content-Type", "application/json");
 

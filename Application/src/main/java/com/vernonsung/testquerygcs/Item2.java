@@ -46,14 +46,16 @@ public class Item2 {
         }
     }
 
-    private String id;             // Datastore ID of item kind
-    private String image;          // Google Cloud Storage file URL
-    private int people;            // Satisfied people number
-    private int attendant;         // Delta people number
-    private double latitude;       // Format "[+-]DDD.DDDDD"
-    private double longitude;      // Format "[+-]DDD.DDDDD"
-    private String createtime;     // RCF 3339 format "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
-    private ItemMember members[];  // The users who attended this item
+    private String id;               // Datastore ID of item kind
+    private String image;            // Google Cloud Storage file URL
+    private int people;              // Satisfied people number
+    private int attendant;           // Delta people number
+    private double latitude;         // Format "[+-]DDD.DDDDD"
+    private double longitude;        // Format "[+-]DDD.DDDDD"
+    private String createtime;       // RCF 3339 format "yyyy-MM-dd'T'HH:mm:ss.SSSSSSZ"
+    private ItemMember members[];    // The users who attended this item
+    private String gcmgroupname;  // Google Cloud Messaging unique group ID
+    private String gcmgroupkey;  // Google Cloud Messaging unique group ID
 
     private static final String LARGE_BASE_URL = "http://aliza-1148.appspot.com.storage.googleapis.com/testgcs/large/";
     private static final String THUMB_BASE_URL = "http://aliza-1148.appspot.com.storage.googleapis.com/testgcs/thumbs/";
@@ -71,7 +73,9 @@ public class Item2 {
                  double latitude,
                  double longitude,
                  String createtime,
-                 ItemMember[] members) {
+                 ItemMember[] members,
+                 String gcmgroupname,
+                 String gcmgroupkey) {
         this.id = id;
         this.image = image;
         this.people = people;
@@ -80,6 +84,8 @@ public class Item2 {
         this.longitude = longitude;
         this.createtime = createtime;
         this.members = members;
+        this.gcmgroupname = gcmgroupname;
+        this.gcmgroupkey = gcmgroupkey;
     }
 
     public String getId() {
@@ -146,6 +152,22 @@ public class Item2 {
         this.members = members;
     }
 
+    public String getGcmgroupname() {
+        return gcmgroupname;
+    }
+
+    public void setGcmgroupname(String gcmgroupname) {
+        this.gcmgroupname = gcmgroupname;
+    }
+
+    public String getGcmgroupkey() {
+        return gcmgroupkey;
+    }
+
+    public void setGcmgroupkey(String gcmgroupkey) {
+        this.gcmgroupkey = gcmgroupkey;
+    }
+
     public String getPhotoUrl() {
 //        return LARGE_BASE_URL + image;
         return image;
@@ -161,7 +183,7 @@ public class Item2 {
     // So create a transform function.
     public JSONObject toJSONObject() throws JSONException {
         JSONObject j = new JSONObject();
-        // ID and CreateTime are determined by server. So just put other properties.
+        // ID, CreateTime, NotificationKey are determined by server. So just put other properties.
         j.put("image", image);
         j.put("people", people);
         j.put("attendant", attendant);
@@ -182,6 +204,8 @@ public class Item2 {
                 ", longitude=" + longitude +
                 ", createtime='" + createtime + '\'' +
                 ", members=" + Arrays.toString(members) +
+                ", gcmgroupname='" + gcmgroupname + '\'' +
+                ", gcmgroupkey='" + gcmgroupkey + '\'' +
                 '}';
     }
 }
