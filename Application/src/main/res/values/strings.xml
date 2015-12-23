@@ -66,6 +66,7 @@
     <string name="get_location_failed_because_google_play_service_is_not_installed">Get location failed. Please make sure Google play service is running.</string>
     <string name="get_location_failed_because_gps_is_off">Get location failed. Please make sure GPS is ON.</string>
     <string name="app_is_not_registered_please_check_internet_and_retry_later">APP is not registered. Please check Internet and retry later</string>
-    <string name="you_left_and_deleted_the_item">You left and deleted the item</string>
+    <string name="server_is_busy_please_try_again_later">Server is busy. Please try again later.</string>
+    <string name="please_check_the_network_and_try_again">Please check the network and try again later.</string>
 
 </resources>

@@ -718,6 +718,7 @@ public class CreateItemActivity extends GoogleApiActivity {
                 mTextViewInfo.setText(R.string.wait_for_1_friend);
                 mButtonMore.setEnabled(true);
                 mButtonSend.setText(R.string.send);
+                mButtonSend.setEnabled(true);
                 // Set thread
                 if (mCreateItemTask != null && mCreateItemTask.getStatus() != AsyncTask.Status.FINISHED) {
                     mCreateItemTask.cancel(false);

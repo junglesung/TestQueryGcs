@@ -175,7 +175,6 @@ public class DetailActivity extends Activity {
     private void loadThumbnail() {
         Picasso.with(mHeaderImageView.getContext())
                 .load(mItem.getThumbnailUrl())
-                .noFade()
                 .into(mHeaderImageView);
     }
 
@@ -254,13 +253,17 @@ public class DetailActivity extends Activity {
         // Check network connection ability and then access Google Cloud Storage
         ConnectivityManager connMgr = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
-        if (networkInfo != null && networkInfo.isConnected()) {
-            // Execute querying thread
-            mUpdateItemTask = new UpdateItemTask();
-            mUpdateItemTask.execute(change);
-        } else {
+        if (networkInfo == null || !networkInfo.isConnected()) {
             Toast.makeText(this, getString(R.string.no_network_connection_available), Toast.LENGTH_SHORT).show();
+            return;
         }
+        if (mUpdateItemTask != null && mUpdateItemTask .getStatus() == AsyncTask.Status.RUNNING) {
+            Toast.makeText(this, getString(R.string.server_is_busy_please_try_again_later), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        // Execute querying thread
+        mUpdateItemTask = new UpdateItemTask();
+        mUpdateItemTask.execute(change);
     }
 
     // Get the latest items from the server in background
@@ -286,6 +289,10 @@ public class DetailActivity extends Activity {
         @Override
         protected void onPostExecute(Integer _change) {
             super.onPostExecute(_change);
+            if (_change == 0) {
+                Toast.makeText(getApplicationContext(), getString(R.string.please_check_the_network_and_try_again), Toast.LENGTH_SHORT).show();
+                return;
+            }
             // Update memory
             mItem.setAttendant(mItem.getAttendant() + _change);
             // Update UI
@@ -303,6 +310,7 @@ public class DetailActivity extends Activity {
             byte[] data;
             OutputStream out;
             String itemUrl = UPDATE_ITEM_URL + "/" + mItem.getId();
+            int ret = 0;
 
             try {
                 url = new URL(itemUrl);
@@ -361,13 +369,15 @@ public class DetailActivity extends Activity {
 
             } catch (Exception e) {
                 e.printStackTrace();
+                Log.d(LOG_TAG, "Update item failed because " + e.getMessage());
+                ret = -1;
             } finally {
                 if (urlConnection != null) {
                     urlConnection.disconnect();
                 }
             }
 
-            return 0;
+            return ret;
         }
     }
 

@@ -401,7 +401,7 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
             if (items == null) {
                 Log.d(LOG_TAG, "Got 0 item");
             } else {
-                Log.d(LOG_TAG, "Got " + items.length + "items");
+                Log.d(LOG_TAG, "Got " + items.length + " items");
                 // Vernon debug
                 for (Item2 i : items) {
                     Log.d(LOG_TAG, i.toString());
