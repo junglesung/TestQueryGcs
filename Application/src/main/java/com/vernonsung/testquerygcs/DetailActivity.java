@@ -266,51 +266,62 @@ public class DetailActivity extends Activity {
         mUpdateItemTask.execute(change);
     }
 
+    public enum UpdateItemStatus {
+        SUCCESS,
+        ANDROID_FAILURE,
+        SERVER_FAILURE
+    }
+
     // Get the latest items from the server in background
-    private class UpdateItemTask extends AsyncTask<Integer, Void, Integer> {
+    private class UpdateItemTask extends AsyncTask<Integer, Void, Void> {
         static final String UPDATE_ITEM_URL = "https://aliza-1148.appspot.com/api/0.1/items";
         private int change;
+        private UpdateItemStatus status = UpdateItemStatus.SUCCESS;
 
         @Override
-        protected Integer doInBackground(Integer... params) {
+        protected Void doInBackground(Integer... params) {
             // Get the change number
             if (params.length < 1) {
                 Log.e(LOG_TAG, "No specified number");
-                return 0;
+                status = UpdateItemStatus.ANDROID_FAILURE;
+                return null;
             }
             change = params[0];
-            if (updateItem() == 0) {
-                return change;
-            } else {
-                return 0;
-            }
+            updateItem();
+            return null;
         }
 
         @Override
-        protected void onPostExecute(Integer _change) {
-            super.onPostExecute(_change);
-            if (_change == 0) {
-                Toast.makeText(getApplicationContext(), getString(R.string.please_check_the_network_and_try_again), Toast.LENGTH_SHORT).show();
-                return;
+        protected void onPostExecute(Void v) {
+            super.onPostExecute(v);
+            switch (status) {
+                case SUCCESS:
+                    // Update memory
+                    mItem.setAttendant(mItem.getAttendant() + change);
+                    // Update UI
+                    // TODO: Check whether the item is deleted because the user as the owner left
+                    mHeaderTitle.setText(mItem.getAttendant() + "/" + mItem.getPeople());
+                    break;
+                case ANDROID_FAILURE:
+                    Toast.makeText(getApplicationContext(), getString(R.string.please_check_the_network_and_try_again), Toast.LENGTH_SHORT).show();
+                    break;
+                case SERVER_FAILURE:
+                    Toast.makeText(getApplicationContext(), getString(R.string.server_is_busy_please_try_again_later), Toast.LENGTH_SHORT).show();
+                    break;
             }
-            // Update memory
-            mItem.setAttendant(mItem.getAttendant() + _change);
-            // Update UI
-            // TODO: Check whether the item is deleted because the user as the owner left
-            mHeaderTitle.setText(mItem.getAttendant() + "/" + mItem.getPeople());
         }
 
         // HTTP PUT change to the server
         // Return 0 on success
-        // Return -1 on failure
-        private int updateItem() {
+        // Return 1 on Android failure
+        // Return 2 on server failure
+        private void updateItem() {
             URL url;
             HttpsURLConnection urlConnection = null;
             int size;
             byte[] data;
             OutputStream out;
             String itemUrl = UPDATE_ITEM_URL + "/" + mItem.getId();
-            int ret = 0;
 
             try {
                 url = new URL(itemUrl);
@@ -347,7 +358,8 @@ public class DetailActivity extends Activity {
                 // Check canceled
                 if (isCancelled()) {
                     Log.d(LOG_TAG, "Updating item canceled");
-                    return -1;
+                    status = UpdateItemStatus.ANDROID_FAILURE;
+                    return;
                 }
 
                 // Set timeout
@@ -361,7 +373,8 @@ public class DetailActivity extends Activity {
                 Log.d(LOG_TAG, "Response " + responseCode + " " + responseMsg);
                 if (responseCode != HttpURLConnection.HTTP_OK) {
                     Log.d(LOG_TAG, "Update item attendant " + change + " failed");
-                    return -1;
+                    status = UpdateItemStatus.SERVER_FAILURE;
+                    return;
                 }
 
                 // Vernon debug
@@ -370,14 +383,13 @@ public class DetailActivity extends Activity {
             } catch (Exception e) {
                 e.printStackTrace();
                 Log.d(LOG_TAG, "Update item failed because " + e.getMessage());
-                ret = -1;
+                Log.d(LOG_TAG, e.getStackTrace().toString());
+                status = UpdateItemStatus.ANDROID_FAILURE;
             } finally {
                 if (urlConnection != null) {
                     urlConnection.disconnect();
                 }
             }
-
-            return ret;
         }
     }
 
