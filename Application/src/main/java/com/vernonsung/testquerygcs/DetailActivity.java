@@ -22,11 +22,13 @@ import com.squareup.picasso.Picasso;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.preference.PreferenceManager;
 import android.support.v4.app.NavUtils;
 import android.support.v4.view.ViewCompat;
 import android.transition.Transition;
@@ -48,6 +50,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.Objects;
 import java.util.TimeZone;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -80,6 +83,7 @@ public class DetailActivity extends Activity {
     private TextView mTextViewIntroduction;
 
     private Item2 mItem;
+    private int myAttendant = 0;
 
     // Threads
     private UpdateItemTask mUpdateItemTask;
@@ -140,9 +144,23 @@ public class DetailActivity extends Activity {
         loadItem();
     }
 
+    // Show detail information
     private void loadItem() {
-        // Show detail information
-        mHeaderTitle.setText(mItem.getAttendant() + "/" + mItem.getPeople());
+        // Show attendants.
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String userId = sharedPreferences.getString(MyConstants.USER_ID, "");
+        if (userId.isEmpty()) {
+            Log.d(LOG_TAG, "Got empty user ID. Go to main activity.");
+            Toast.makeText(this, getString(R.string.data_is_out_of_date_reload_automatically), Toast.LENGTH_LONG).show();
+            NavUtils.navigateUpFromSameTask(this);
+        }
+        for (Item2.ItemMember member: mItem.getMembers()) {
+            if (member.getUserkey() == userId) {
+                myAttendant = member.getAttendant();
+                Log.d(LOG_TAG, "I attendants " + myAttendant + " in item " + mItem.getId());
+            }
+        }
+        mHeaderTitle.setText("(" + myAttendant + ") " + mItem.getAttendant() + "/" + mItem.getPeople());
 
         // Transform time format and show
         SimpleDateFormat sdf1 = new SimpleDateFormat(RFC3339FORMAT, Locale.US);  // in format
@@ -158,6 +176,7 @@ public class DetailActivity extends Activity {
         }
         mTextViewIntroduction.setText(timeString);
 
+        // Show the image
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && addTransitionListener()) {
             // If we're running on Lollipop and we have added a listener to the shared element
             // transition, load the thumbnail. The listener will load the full-size image when
@@ -296,11 +315,12 @@ public class DetailActivity extends Activity {
             super.onPostExecute(v);
             switch (status) {
                 case SUCCESS:
+                    // TODO: Check whether the item is deleted because the user as the owner left
                     // Update memory
+                    myAttendant += change;
                     mItem.setAttendant(mItem.getAttendant() + change);
                     // Update UI
-                    // TODO: Check whether the item is deleted because the user as the owner left
-                    mHeaderTitle.setText(mItem.getAttendant() + "/" + mItem.getPeople());
+                    mHeaderTitle.setText("(" + myAttendant + ") " + mItem.getAttendant() + "/" + mItem.getPeople());
                     break;
                 case ANDROID_FAILURE:
                     Toast.makeText(getApplicationContext(), getString(R.string.please_check_the_network_and_try_again), Toast.LENGTH_SHORT).show();
