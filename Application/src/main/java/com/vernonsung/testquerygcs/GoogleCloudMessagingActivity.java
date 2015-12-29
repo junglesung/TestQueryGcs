@@ -87,8 +87,8 @@ public class GoogleCloudMessagingActivity extends Activity {
         SharedPreferences sharedPreferences =
                 PreferenceManager.getDefaultSharedPreferences(this);
         String token = sharedPreferences.getString(MyConstants.REGISTRATION_TOKEN, "deleted");
-        Log.d(LOG_TAG, "Token should be shown");
-        Toast.makeText(this, "Token is " + token, Toast.LENGTH_LONG).show();
+        Log.d(LOG_TAG, "Token is " + token);
+        Toast.makeText(this, getString(R.string.server_is_connected), Toast.LENGTH_SHORT).show();
     }
 
     // Trigger when a broadcast intent with action REGISTRATION_COMPLETE is received

@@ -21,7 +21,9 @@ import com.google.gson.Gson;
 import com.squareup.picasso.Picasso;
 
 import android.app.Activity;
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -60,6 +62,13 @@ import javax.net.ssl.HttpsURLConnection;
  * which has a large banner image, title and body text.
  */
 public class DetailActivity extends Activity {
+
+    public enum UpdateItemStatus {
+        SUCCESS,
+        ITEM_CLOSED,
+        ANDROID_FAILURE,
+        SERVER_FAILURE
+    }
 
     private static final String LOG_TAG = "TestGood";
 
@@ -155,7 +164,7 @@ public class DetailActivity extends Activity {
             NavUtils.navigateUpFromSameTask(this);
         }
         for (Item2.ItemMember member: mItem.getMembers()) {
-            if (member.getUserkey() == userId) {
+            if (member.getUserkey().equals(userId)) {
                 myAttendant = member.getAttendant();
                 Log.d(LOG_TAG, "I attendants " + myAttendant + " in item " + mItem.getId());
             }
@@ -285,10 +294,26 @@ public class DetailActivity extends Activity {
         mUpdateItemTask.execute(change);
     }
 
-    public enum UpdateItemStatus {
-        SUCCESS,
-        ANDROID_FAILURE,
-        SERVER_FAILURE
+    private void navigateUp() {
+        NavUtils.navigateUpFromSameTask(this);
+    }
+
+    private void showItemCloseDialog() {
+        // 1. Instantiate an AlertDialog.Builder with its constructor
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        // 2. Chain together various setter methods to set the dialog characteristics
+        builder.setMessage(R.string.go_to_the_item_list)
+                .setTitle(R.string.item_was_closed_since_the_owner_left);
+        builder.setPositiveButton(R.string.ok, new DialogInterface.OnClickListener() {
+            public void onClick(DialogInterface dialog, int id) {
+                // User clicked OK button
+                navigateUp();
+            }
+        });
+        // 3. Get the AlertDialog from create()
+        AlertDialog dialog = builder.create();
+        // 4. Show the dialog
+        dialog.show();
     }
 
     // Get the latest items from the server in background
@@ -321,6 +346,9 @@ public class DetailActivity extends Activity {
                     mItem.setAttendant(mItem.getAttendant() + change);
                     // Update UI
                     mHeaderTitle.setText("(" + myAttendant + ") " + mItem.getAttendant() + "/" + mItem.getPeople());
+                    break;
+                case ITEM_CLOSED:
+                    showItemCloseDialog();
                     break;
                 case ANDROID_FAILURE:
                     Toast.makeText(getApplicationContext(), getString(R.string.please_check_the_network_and_try_again), Toast.LENGTH_SHORT).show();
@@ -391,6 +419,11 @@ public class DetailActivity extends Activity {
                 int responseCode = urlConnection.getResponseCode();
                 String responseMsg = urlConnection.getResponseMessage();
                 Log.d(LOG_TAG, "Response " + responseCode + " " + responseMsg);
+                if (responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
+                    Log.d(LOG_TAG, "Server says the item was closed");
+                    status = UpdateItemStatus.ITEM_CLOSED;
+                    return;
+                }
                 if (responseCode != HttpURLConnection.HTTP_OK) {
                     Log.d(LOG_TAG, "Update item attendant " + change + " failed");
                     status = UpdateItemStatus.SERVER_FAILURE;

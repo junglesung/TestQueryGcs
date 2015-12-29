@@ -69,5 +69,8 @@
     <string name="server_is_busy_please_try_again_later">Server is busy. Please try again later.</string>
     <string name="please_check_the_network_and_try_again">Please check the network and try again later.</string>
     <string name="data_is_out_of_date_reload_automatically">Data is out of date. Reload automatically.</string>
+    <string name="server_is_connected">Server is connected.</string>
+    <string name="item_was_closed_since_the_owner_left">Item was closed since the owner left.</string>
+    <string name="go_to_the_item_list">Go to the item list.</string>
 
 </resources>
