@@ -19,6 +19,7 @@ import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
 import android.support.v4.app.NavUtils;
+import android.telephony.TelephonyManager;
 import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -543,6 +544,13 @@ public class CreateItemActivity extends GoogleApiActivity {
         item.setAttendant(1);
         item.setLatitude(location.getLatitude());
         item.setLongitude(location.getLongitude());
+        // Get phone number
+        TelephonyManager tMgr = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
+        String mPhoneNumber = tMgr.getLine1Number();
+        if (mPhoneNumber == null || mPhoneNumber.isEmpty()) {
+            // TODO: Show dialog to enter phone number
+        }
+        Log.d(LOG_TAG, "Got phone number " + mPhoneNumber);
 
         // Change state
         changeState(CreateItemState.SENDING);
