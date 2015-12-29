@@ -1,6 +1,7 @@
 package com.vernonsung.testquerygcs;
 
 import android.app.AlertDialog;
+import android.app.DialogFragment;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -49,7 +50,8 @@ import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
 
-public class CreateItemActivity extends GoogleApiActivity {
+public class CreateItemActivity extends GoogleApiActivity
+                             implements PhoneNumberDialogFragment.PhoneNumberDialogListener {
 
     private static final String LOG_TAG = "TestGood";
 
@@ -770,5 +772,22 @@ public class CreateItemActivity extends GoogleApiActivity {
         AlertDialog dialog = builder.create();
         // 4. Show the dialog
         dialog.show();
+    }
+
+    // Show dialog for users to input their phone numbers if the numbers are not automatically detected
+    public void showPhoneNumberDialog() {
+        // Create an instance of the dialog fragment and show it
+        DialogFragment dialog = new PhoneNumberDialogFragment();
+        dialog.show(getFragmentManager(), "PhoneNumberDialogFragment");
+    }
+
+    @Override
+    public void onDialogPositiveClick(DialogFragment dialog) {
+
+    }
+
+    @Override
+    public void onDialogNegativeClick(DialogFragment dialog) {
+
     }
 }

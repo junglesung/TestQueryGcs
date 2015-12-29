@@ -72,5 +72,6 @@
     <string name="server_is_connected">Server is connected.</string>
     <string name="item_was_closed_since_the_owner_left">Item was closed since the owner left.</string>
     <string name="go_to_the_item_list">Go to the item list.</string>
+    <string name="phone_number_for_other_to_contact_when_items_finish">Phone number for other to contact when items finish</string>
 
 </resources>
