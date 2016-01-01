@@ -24,15 +24,18 @@ import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
+import android.content.Intent;
 import android.content.SharedPreferences;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NavUtils;
 import android.support.v4.view.ViewCompat;
+import android.test.PerformanceTestCase;
 import android.transition.Transition;
 import android.util.Log;
 import android.view.View;
@@ -90,6 +93,7 @@ public class DetailActivity extends Activity {
     private ImageButton mButtonPlus;
     private ImageButton mButtonMinus;
     private TextView mTextViewIntroduction;
+    private ImageButton mButtonCallPhone;
 
     private Item2 mItem;
     private int myAttendant = 0;
@@ -123,6 +127,7 @@ public class DetailActivity extends Activity {
         mButtonPlus = (ImageButton) findViewById(R.id.imageButton_plus);
         mButtonMinus = (ImageButton) findViewById(R.id.imageButton_minus);
         mTextViewIntroduction = (TextView) findViewById(R.id.textview_introduction);
+        mButtonCallPhone = (ImageButton) findViewById(R.id.imageButton_callPhone);
 
         mButtonPlus.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -135,6 +140,13 @@ public class DetailActivity extends Activity {
             @Override
             public void onClick(View v) {
                 leave();
+            }
+        });
+
+        mButtonCallPhone.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // TODO: Call others
             }
         });
 
@@ -195,6 +207,9 @@ public class DetailActivity extends Activity {
             // If all other cases we should just load the full-size image now
             loadFullSizeImage();
         }
+
+        // Show call button
+        updateButtonVisibility();
     }
 
     /**
@@ -267,6 +282,16 @@ public class DetailActivity extends Activity {
         return false;
     }
 
+    // Set call buttons' visibility
+    private void updateButtonVisibility() {
+        if (myAttendant > 0 && mItem.getAttendant() >= 2) {
+            // Show call button
+            mButtonCallPhone.setVisibility(View.VISIBLE);
+        } else {
+            mButtonCallPhone.setVisibility(View.INVISIBLE);
+        }
+
+    }
     // Attend in the item
     private void attend() {
         modifyAttendant(1);
@@ -346,6 +371,8 @@ public class DetailActivity extends Activity {
                     mItem.setAttendant(mItem.getAttendant() + change);
                     // Update UI
                     mHeaderTitle.setText("(" + myAttendant + ") " + mItem.getAttendant() + "/" + mItem.getPeople());
+                    // Show call button
+                    updateButtonVisibility();
                     break;
                 case ITEM_CLOSED:
                     showItemCloseDialog();
@@ -446,4 +473,39 @@ public class DetailActivity extends Activity {
         }
     }
 
+    // Make a phone call to the owner or the member
+    private void callOthersPhone() {
+        String phoneNumber;
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        String userId = sharedPreferences.getString(MyConstants.USER_ID, "");
+        if (userId.equals("")) {
+            Log.e(LOG_TAG, "User ID is empty. Maybe I'm not registered. Restart the APP.");
+            Toast.makeText(this, R.string.app_is_not_registered_please_check_internet_and_retry_later, Toast.LENGTH_SHORT).show();
+            return;
+        }
+
+        if (mItem.getMembers().length < 2) {
+            Log.w(LOG_TAG, "Item member " + mItem.getMembers().length + " < 2 means it's out of date. Please refresh.");
+            Toast.makeText(this, R.string.data_is_out_of_date_please_refresh, Toast.LENGTH_LONG).show();
+            return;
+        }
+        if (mItem.getMembers()[0].getUserkey() == userId) {
+            // Call the member
+            phoneNumber = mItem.getMembers()[1].getPhonenumber();
+        } else {
+            // Call the owner
+            phoneNumber = mItem.getMembers()[0].getPhonenumber();
+        }
+
+        // Open Phone APP
+        Intent intent = new Intent(Intent.ACTION_DIAL);
+        intent.setData(Uri.parse("tel:" + phoneNumber));
+        if (intent.resolveActivity(getPackageManager()) != null) {
+            Log.d(LOG_TAG, "Can't find phone APP");
+            Toast.makeText(this, R.string.phone_app_is_not_found, Toast.LENGTH_LONG).show();
+            return;
+        }
+        Toast.makeText(this, R.string.call_your_partner, Toast.LENGTH_LONG).show();
+        startActivity(intent);
+    }
 }

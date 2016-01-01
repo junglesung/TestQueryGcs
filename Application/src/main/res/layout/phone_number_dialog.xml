@@ -7,7 +7,10 @@
     <EditText
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:inputType="phone"
+        android:inputType="number"
         android:ems="10"
+        android:hint="@string/ex_mobile_phone_number"
+        android:imeOptions="actionSend"
         android:id="@+id/editTextPhone" />
+
 </LinearLayout>

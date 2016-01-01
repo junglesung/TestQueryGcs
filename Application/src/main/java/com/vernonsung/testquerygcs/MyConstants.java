@@ -5,6 +5,7 @@ public class MyConstants {
     public static final String REGISTRATION_TOKEN = "registrationToken";  // String. Google Cloud Messaging registration token
     public static final String USER_ID = "userId";  // String. Google APP Engine Datastore user ID
     public static final String SENT_TOKEN_TO_SERVER = "sentTokenToServer";  // boolean. Indicate whether the registration token has been sent to Google APP Engine server
+    public static final String PHONE_NUMBER = "phoneNumber";  // String. User input phone number
 
     // Broadcast intent
     public static final String REGISTRATION_COMPLETE = "registrationComplete";

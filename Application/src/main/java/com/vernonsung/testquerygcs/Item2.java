@@ -1,5 +1,6 @@
 package com.vernonsung.testquerygcs;
 
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -8,17 +9,22 @@ import java.util.Arrays;
 
 public class Item2 {
     public class ItemMember {
-        private String userkey;    // Datastore ID of an user
-        private int    attendant;  // How many the user attends
+        // Property names must be lowercase because they are received and sent in JSON format
+        private String userkey;      // Datastore ID of an user
+        private int    attendant;    // How many the user attends
+        private String phonenumber;  // User's phone number
+        private String skypeid;      // User's Skype ID
 
         // Default constructor
         public ItemMember() {
         }
 
         // Constructor
-        public ItemMember(String userkey, int attendant) {
+        public ItemMember(String userkey, int attendant, String phonenumber, String skypeid) {
             this.userkey = userkey;
             this.attendant = attendant;
+            this.phonenumber = phonenumber;
+            this.skypeid = skypeid;
         }
 
         public String getUserkey() {
@@ -37,15 +43,34 @@ public class Item2 {
             this.attendant = attendant;
         }
 
+        public String getPhonenumber() {
+            return phonenumber;
+        }
+
+        public void setPhonenumber(String phonenumber) {
+            this.phonenumber = phonenumber;
+        }
+
+        public String getSkypeid() {
+            return skypeid;
+        }
+
+        public void setSkypeid(String skypeid) {
+            this.skypeid = skypeid;
+        }
+
         @Override
         public String toString() {
             return "ItemMember{" +
                     "userkey='" + userkey + '\'' +
                     ", attendant=" + attendant +
+                    ", phonenumber='" + phonenumber + '\'' +
+                    ", skypeid='" + skypeid + '\'' +
                     '}';
         }
     }
 
+    // Property names must be lowercase because they are received and sent in JSON format
     private String id;               // Datastore ID of item kind
     private String image;            // Google Cloud Storage file URL
     private int people;              // Satisfied people number
@@ -189,6 +214,13 @@ public class Item2 {
         j.put("attendant", attendant);
         j.put("latitude", latitude);
         j.put("longitude", longitude);
+        JSONObject m = new JSONObject();
+        m.put("attendant", members[0].attendant);
+        m.put("phonenumber", members[0].phonenumber);
+        m.put("skypeid", members[0].skypeid);
+        JSONArray a = new JSONArray();
+        a.put(m);
+        j.put("members", a);
         // Never send CreateTime to the server because it's determined by the server.
         return j;
     }

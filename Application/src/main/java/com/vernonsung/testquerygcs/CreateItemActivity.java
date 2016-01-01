@@ -66,6 +66,8 @@ public class CreateItemActivity extends GoogleApiActivity
     // Current image path
     private Uri mCurrentPhotoUri;
     private String mGcsPhotoUrl;
+    // User input phone number got from dialog
+    private String mPhoneNumber;
 
     // State
     private CreateItemState mState;
@@ -494,6 +496,41 @@ public class CreateItemActivity extends GoogleApiActivity
         }
     }
 
+    // Show dialog for users to input/confirm their phone numbers
+    // Dialog will really shows after returning to activity
+    public void showPhoneNumberDialog() {
+        // Create an instance of the dialog fragment and show it
+        DialogFragment dialog = new PhoneNumberDialogFragment();
+        dialog.show(getFragmentManager(), "PhoneNumberDialogFragment");
+    }
+
+    @Override
+    public void onDialogPositiveClick(DialogFragment dialog) {
+        PhoneNumberDialogFragment mPhoneNumberDialogFragment;
+        try {
+            mPhoneNumberDialogFragment = (PhoneNumberDialogFragment) dialog;
+        } catch (ClassCastException e) {
+            // The activity doesn't implement the interface, throw exception
+            throw new ClassCastException(dialog.toString()
+                    + " must be PhoneNumberDialogFragment");
+        }
+        mPhoneNumber = mPhoneNumberDialogFragment.getPhoneNumber();
+        if (mPhoneNumber == null || mPhoneNumber.isEmpty()) {
+            Log.d(LOG_TAG, "Phone number is empty");
+            Toast.makeText(this, getString(R.string.wrong_phone_number_format_please_enter_again), Toast.LENGTH_LONG).show();
+            return;
+        }
+        Log.d(LOG_TAG, "Got phone number " + mPhoneNumber);
+
+        // Continue creating the item
+        createItem();
+    }
+
+    @Override
+    public void onDialogNegativeClick(DialogFragment dialog) {
+        Log.d(LOG_TAG, "Return from Phone Dialog canceled");
+    }
+
     private Location fetchLocation() {
         GoogleApiClient mGoogleApiClient = getGoogleApiClient();
         // Make sure Google play service is connected in order to get location from it
@@ -526,6 +563,13 @@ public class CreateItemActivity extends GoogleApiActivity
             return;
         }
 
+        // Check phone number
+        if (mPhoneNumber == null || mPhoneNumber.isEmpty()) {
+            showPhoneNumberDialog();
+            // Dialog will really shows after returning to activity
+            return;
+        }
+
         // Check network connection ability and then access Google Cloud Storage
         ConnectivityManager connMgr = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
@@ -546,13 +590,11 @@ public class CreateItemActivity extends GoogleApiActivity
         item.setAttendant(1);
         item.setLatitude(location.getLatitude());
         item.setLongitude(location.getLongitude());
-        // Get phone number
-        TelephonyManager tMgr = (TelephonyManager)getSystemService(Context.TELEPHONY_SERVICE);
-        String mPhoneNumber = tMgr.getLine1Number();
-        if (mPhoneNumber == null || mPhoneNumber.isEmpty()) {
-            // TODO: Show dialog to enter phone number
-        }
-        Log.d(LOG_TAG, "Got phone number " + mPhoneNumber);
+        Item2.ItemMember[] owner = new Item2.ItemMember[1];
+        owner[0] = item.new ItemMember();
+        owner[0].setAttendant(1);
+        owner[0].setPhonenumber(mPhoneNumber);
+        item.setMembers(owner);
 
         // Change state
         changeState(CreateItemState.SENDING);
@@ -630,6 +672,9 @@ public class CreateItemActivity extends GoogleApiActivity
                 data = item.toJSONObject().toString().getBytes();
 //                data = new Gson().toJson(item).getBytes();
 
+                // Vernon debug
+                Log.i(LOG_TAG, urlConnection.getRequestMethod() + " " + CREATE_ITEM_URL + " " + new String(data));
+
                 // For best performance, you should call either setFixedLengthStreamingMode(int) when the body length is known in advance, or setChunkedStreamingMode(int) when it is not. Otherwise HttpURLConnection will be forced to buffer the complete request body in memory before it is transmitted, wasting (and possibly exhausting) heap and increasing latency.
                 size = data.length;
                 if (size > 0) {
@@ -654,7 +699,7 @@ public class CreateItemActivity extends GoogleApiActivity
                 // getResponseCode() will automatically trigger connect()
                 int responseCode = urlConnection.getResponseCode();
                 String responseMsg = urlConnection.getResponseMessage();
-                Log.d(LOG_TAG, "Response " + responseCode + " " + responseMsg);
+                Log.i(LOG_TAG, "Response " + responseCode + " " + responseMsg);
                 if (responseCode != HttpURLConnection.HTTP_CREATED) {
                     return null;
                 }
@@ -774,20 +819,4 @@ public class CreateItemActivity extends GoogleApiActivity
         dialog.show();
     }
 
-    // Show dialog for users to input their phone numbers if the numbers are not automatically detected
-    public void showPhoneNumberDialog() {
-        // Create an instance of the dialog fragment and show it
-        DialogFragment dialog = new PhoneNumberDialogFragment();
-        dialog.show(getFragmentManager(), "PhoneNumberDialogFragment");
-    }
-
-    @Override
-    public void onDialogPositiveClick(DialogFragment dialog) {
-
-    }
-
-    @Override
-    public void onDialogNegativeClick(DialogFragment dialog) {
-
-    }
 }
