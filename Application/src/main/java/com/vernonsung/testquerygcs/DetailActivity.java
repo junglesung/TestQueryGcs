@@ -401,17 +401,13 @@ public class DetailActivity extends Activity {
 
         @Override
         protected void onPostExecute(Void v) {
-            super.onPostExecute(v);
+            // Enable screen rotation first because SUCCESS will execute another AsyncTask.
+            setRequestedOrientation(screenOrientation);
+
             switch (status) {
                 case SUCCESS:
-                    // TODO: Get the latest item data from the server
-                    // Update memory
-                    myAttendant += change;
-                    mItem.setAttendant(mItem.getAttendant() + change);
-                    // Update UI
-                    mHeaderTitle.setText("(" + myAttendant + ") " + mItem.getAttendant() + "/" + mItem.getPeople());
-                    // Show call button
-                    updateButtonVisibility();
+                    // Get the latest item data from the server
+                    initiateRefresh();
                     break;
                 case ITEM_CLOSED:
                     showItemCloseDialog();
@@ -423,10 +419,6 @@ public class DetailActivity extends Activity {
                     Toast.makeText(getApplicationContext(), getString(R.string.server_is_busy_please_try_again_later), Toast.LENGTH_SHORT).show();
                     break;
             }
-
-            // Enable screen rotation
-            setRequestedOrientation(screenOrientation);
-
         }
 
         // HTTP PUT change to the server
@@ -483,6 +475,10 @@ public class DetailActivity extends Activity {
                 // Set timeout
                 urlConnection.setReadTimeout(10000 /* milliseconds */);
                 urlConnection.setConnectTimeout(15000 /* milliseconds */);
+
+                // Vernon debug
+                Log.d(LOG_TAG, urlConnection.getRequestMethod() + " " +
+                        urlConnection.getURL().toString());
 
                 // Send and get response
                 // getResponseCode() will automatically trigger connect()
@@ -597,6 +593,9 @@ public class DetailActivity extends Activity {
 
         @Override
         protected void onPostExecute(Item2 v) {
+            // Enable screen rotation
+            setRequestedOrientation(screenOrientation);
+
             switch (status) {
                 case SUCCESS:
                     // Store item info
@@ -616,10 +615,6 @@ public class DetailActivity extends Activity {
             }
             // Stop the refreshing indicator
             mSwipeRefreshLayout.setRefreshing(false);
-
-            // Enable screen rotation
-            setRequestedOrientation(screenOrientation);
-
         }
 
         // HTTP GET item from the server
