@@ -26,6 +26,7 @@ import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
@@ -35,6 +36,7 @@ import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NavUtils;
 import android.support.v4.view.ViewCompat;
+import android.support.v4.widget.SwipeRefreshLayout;
 import android.test.PerformanceTestCase;
 import android.transition.Transition;
 import android.util.Log;
@@ -47,6 +49,7 @@ import android.widget.Toast;
 import org.json.JSONObject;
 
 import java.io.BufferedOutputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
@@ -66,6 +69,7 @@ import javax.net.ssl.HttpsURLConnection;
  */
 public class DetailActivity extends Activity {
 
+    // Results of making a HTTP request to the server
     public enum UpdateItemStatus {
         SUCCESS,
         ITEM_CLOSED,
@@ -88,39 +92,34 @@ public class DetailActivity extends Activity {
     // RCF 3339 time format from the server
     public static final String RFC3339FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
 
+    // UI
     private ImageView mHeaderImageView;
     private TextView mHeaderTitle;
     private ImageButton mButtonPlus;
     private ImageButton mButtonMinus;
     private TextView mTextViewIntroduction;
     private ImageButton mButtonCallPhone;
+    private SwipeRefreshLayout mSwipeRefreshLayout;
 
+    // Properties
     private Item2 mItem;
     private int myAttendant = 0;
 
     // Threads
     private UpdateItemTask mUpdateItemTask;
+    private GetItemTask mGetItemTask;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.details);
 
-        // Get item in JSON format
-        String itemJson = getIntent().getStringExtra(EXTRA_PARAM_ITEM);
-        if (itemJson == null) {
-            Log.e(LOG_TAG, "Get null item from intent");
-            NavUtils.navigateUpFromSameTask(this);
-        }
-
-        // Transform JSON to item
-        try {
-            mItem = new Gson().fromJson(itemJson, Item2.class);
-        } catch (Exception e) {
-            e.printStackTrace();
-            Log.e(LOG_TAG, "Wrong JSON format in transforming item");
-            NavUtils.navigateUpFromSameTask(this);
-        }
+        // Retrieve the SwipeRefreshLayout and ListView instances
+        mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swiperefresh_detail);
+        // Set the color scheme of the SwipeRefreshLayout by providing 4 color resource ids
+        mSwipeRefreshLayout.setColorSchemeResources(
+                R.color.swipe_color_1, R.color.swipe_color_2,
+                R.color.swipe_color_3, R.color.swipe_color_4);
 
         mHeaderImageView = (ImageView) findViewById(R.id.imageview_header);
         mHeaderTitle = (TextView) findViewById(R.id.textview_title);
@@ -150,6 +149,14 @@ public class DetailActivity extends Activity {
             }
         });
 
+        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                Log.i(LOG_TAG, "Start swipe refresh");
+                initiateRefresh();
+            }
+        });
+
         // BEGIN_INCLUDE(detail_set_view_name)
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
             /**
@@ -162,7 +169,30 @@ public class DetailActivity extends Activity {
         }
         // END_INCLUDE(detail_set_view_name)
 
-        loadItem();
+        // Get item in JSON format
+        String itemJson = getIntent().getStringExtra(EXTRA_PARAM_ITEM);
+        if (itemJson == null) {
+            Log.e(LOG_TAG, "Get null item from intent");
+            NavUtils.navigateUpFromSameTask(this);
+        }
+
+        // Transform JSON to item
+        try {
+            mItem = new Gson().fromJson(itemJson, Item2.class);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Log.e(LOG_TAG, "Wrong JSON format in transforming item");
+            NavUtils.navigateUpFromSameTask(this);
+        }
+
+        if (savedInstanceState == null) {
+            // The first time, show the item from the intent.
+            loadItem();
+        } else {
+            // Otherwise, refresh the latest data from the server by the item key got from the intent.
+            // loadItem() will be executed automatically after HTTP response from the server.
+            initiateRefresh();
+        }
     }
 
     // Show detail information
@@ -178,7 +208,7 @@ public class DetailActivity extends Activity {
         for (Item2.ItemMember member: mItem.getMembers()) {
             if (member.getUserkey().equals(userId)) {
                 myAttendant = member.getAttendant();
-                Log.d(LOG_TAG, "I attendants " + myAttendant + " in item " + mItem.getId());
+                Log.d(LOG_TAG, "I attended " + myAttendant + " in item " + mItem.getId());
             }
         }
         mHeaderTitle.setText("(" + myAttendant + ") " + mItem.getAttendant() + "/" + mItem.getPeople());
@@ -341,11 +371,20 @@ public class DetailActivity extends Activity {
         dialog.show();
     }
 
-    // Get the latest items from the server in background
+    // Update the item on the server in background
     private class UpdateItemTask extends AsyncTask<Integer, Void, Void> {
         static final String UPDATE_ITEM_URL = "https://aliza-1148.appspot.com/api/0.1/items";
         private int change;
         private UpdateItemStatus status = UpdateItemStatus.SUCCESS;
+        // Screen orientation. Save and disable screen rotation in order to prevent screen rotation destroying the activity and the AsyncTask.
+        private int screenOrientation;
+
+        @Override
+        protected void onPreExecute() {
+            // Disable screen rotation
+            screenOrientation = getRequestedOrientation();
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
+        }
 
         @Override
         protected Void doInBackground(Integer... params) {
@@ -365,7 +404,7 @@ public class DetailActivity extends Activity {
             super.onPostExecute(v);
             switch (status) {
                 case SUCCESS:
-                    // TODO: Check whether the item is deleted because the user as the owner left
+                    // TODO: Get the latest item data from the server
                     // Update memory
                     myAttendant += change;
                     mItem.setAttendant(mItem.getAttendant() + change);
@@ -384,6 +423,10 @@ public class DetailActivity extends Activity {
                     Toast.makeText(getApplicationContext(), getString(R.string.server_is_busy_please_try_again_later), Toast.LENGTH_SHORT).show();
                     break;
             }
+
+            // Enable screen rotation
+            setRequestedOrientation(screenOrientation);
+
         }
 
         // HTTP PUT change to the server
@@ -507,5 +550,133 @@ public class DetailActivity extends Activity {
         }
         Toast.makeText(this, R.string.call_your_partner, Toast.LENGTH_LONG).show();
         startActivity(intent);
+    }
+
+    // Refresh the item information from the server
+    private void initiateRefresh() {
+        // Check Google Instance ID registration
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean isTokenSentToServer = sharedPreferences.getBoolean(MyConstants.SENT_TOKEN_TO_SERVER, false);
+        if (!isTokenSentToServer) {
+            Toast.makeText(this, getString(R.string.app_is_not_registered_please_check_internet_and_retry_later), Toast.LENGTH_LONG).show();
+            return;
+        }
+
+        // Check network connection ability and then access Google Cloud Storage
+        ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+        if (networkInfo != null && networkInfo.isConnected()) {
+            // We make sure that the SwipeRefreshLayout is displaying it's refreshing indicator
+            mSwipeRefreshLayout.setRefreshing(true);
+            // Execute querying thread
+            mGetItemTask = new GetItemTask();
+            mGetItemTask.execute();
+        } else {
+            Toast.makeText(this, getString(R.string.no_network_connection_available), Toast.LENGTH_SHORT).show();
+        }
+    }
+
+    // Get the latest item from the server in background
+    private class GetItemTask extends AsyncTask<Void, Void, Item2> {
+        static final String GET_ITEM_URL = "https://aliza-1148.appspot.com/api/0.1/items";
+        private UpdateItemStatus status = UpdateItemStatus.SUCCESS;
+        // Screen orientation. Save and disable screen rotation in order to prevent screen rotation destroying the activity and the AsyncTask.
+        private int screenOrientation;
+
+        @Override
+        protected void onPreExecute() {
+            // Disable screen rotation
+            screenOrientation = getRequestedOrientation();
+            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
+        }
+
+        @Override
+        protected Item2 doInBackground(Void... params) {
+            return getItem();
+        }
+
+        @Override
+        protected void onPostExecute(Item2 v) {
+            switch (status) {
+                case SUCCESS:
+                    // Store item info
+                    mItem = v;
+                    // Show new item info
+                    loadItem();
+                    break;
+                case ITEM_CLOSED:
+                    showItemCloseDialog();
+                    break;
+                case ANDROID_FAILURE:
+                    Toast.makeText(getApplicationContext(), getString(R.string.please_check_the_network_and_try_again), Toast.LENGTH_SHORT).show();
+                    break;
+                case SERVER_FAILURE:
+                    Toast.makeText(getApplicationContext(), getString(R.string.server_is_busy_please_try_again_later), Toast.LENGTH_SHORT).show();
+                    break;
+            }
+            // Stop the refreshing indicator
+            mSwipeRefreshLayout.setRefreshing(false);
+
+            // Enable screen rotation
+            setRequestedOrientation(screenOrientation);
+
+        }
+
+        // HTTP GET item from the server
+        // Return 0 on success
+        private Item2 getItem() {
+            URL url;
+            HttpsURLConnection urlConnection = null;
+            Item2 item = null;
+            String itemUrl = GET_ITEM_URL + "/" + mItem.getId();
+
+            try {
+                url = new URL(itemUrl);
+                urlConnection = (HttpsURLConnection) url.openConnection();
+
+                // Set authentication instance ID
+                urlConnection.setRequestProperty(MyConstants.HTTP_HEADER_INSTANCE_ID, InstanceID.getInstance(getApplicationContext()).getId());
+                // Set content type
+                urlConnection.setRequestProperty("Content-Type", "application/json");
+
+                // Set timeout
+                urlConnection.setReadTimeout(10000 /* milliseconds */);
+                urlConnection.setConnectTimeout(15000 /* milliseconds */);
+
+                // Vernon debug
+                Log.d(LOG_TAG, urlConnection.getRequestMethod() + " " +
+                        urlConnection.getURL().toString());
+
+                // Send and get response
+                // getResponseCode() will automatically trigger connect()
+                int responseCode = urlConnection.getResponseCode();
+                String responseMsg = urlConnection.getResponseMessage();
+                Log.d(LOG_TAG, "Response " + responseCode + " " + responseMsg);
+                if (responseCode == HttpURLConnection.HTTP_NOT_FOUND) {
+                    Log.d(LOG_TAG, "Server says the item was closed");
+                    status = UpdateItemStatus.ITEM_CLOSED;
+                    return null;
+                }
+                if (responseCode != HttpURLConnection.HTTP_OK) {
+                    Log.d(LOG_TAG, "Get item " + mItem.getId() + " failed");
+                    status = UpdateItemStatus.SERVER_FAILURE;
+                    return null;
+                }
+
+                // Get items from body
+                InputStreamReader in = new InputStreamReader(urlConnection.getInputStream());
+                item = new Gson().fromJson(in, Item2.class);
+            } catch (Exception e) {
+                e.printStackTrace();
+                Log.d(LOG_TAG, "Get item failed because " + e.getMessage());
+                Log.d(LOG_TAG, e.getStackTrace().toString());
+                status = UpdateItemStatus.ANDROID_FAILURE;
+            } finally {
+                if (urlConnection != null) {
+                    urlConnection.disconnect();
+                }
+            }
+            return item;
+        }
     }
 }

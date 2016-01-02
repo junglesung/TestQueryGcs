@@ -13,75 +13,82 @@
      limitations under the License.
 -->
 
-<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
+<android.support.v4.widget.SwipeRefreshLayout
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/swiperefresh_detail"
     android:layout_width="match_parent"
     android:layout_height="match_parent">
 
-    <RelativeLayout
+    <ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="vertical">
+        android:layout_height="match_parent">
 
-        <com.vernonsung.testquerygcs.SquareFrameLayout
-            android:id="@+id/frame_image"
+        <RelativeLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_alignParentStart="true"
-            android:layout_marginStart="0dp"
-            android:layout_alignParentTop="true"
-            android:layout_marginTop="0dp">
+            android:orientation="vertical">
 
-            <ImageView
-                android:id="@+id/imageview_header"
+            <com.vernonsung.testquerygcs.SquareFrameLayout
+                android:id="@+id/frame_image"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:adjustViewBounds="true"
-                android:scaleType="centerInside" />
+                android:layout_alignParentStart="true"
+                android:layout_marginStart="0dp"
+                android:layout_alignParentTop="true"
+                android:layout_marginTop="0dp">
 
-        </com.vernonsung.testquerygcs.SquareFrameLayout>
+                <ImageView
+                    android:id="@+id/imageview_header"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:adjustViewBounds="true"
+                    android:scaleType="centerInside" />
 
-        <TextView
-            android:id="@+id/textview_title"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:background="#000000"
-            android:textColor="#ffffff"
-            android:maxLines="2"
-            android:padding="16dp"
-            android:layout_below="@id/frame_image" />
+            </com.vernonsung.testquerygcs.SquareFrameLayout>
 
-        <ImageButton
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:id="@+id/imageButton_plus"
-            android:src="@drawable/ic_action_add"
-            android:layout_below="@+id/frame_image"
-            android:layout_alignParentEnd="true" />
+            <TextView
+                android:id="@+id/textview_title"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="#000000"
+                android:textColor="#ffffff"
+                android:maxLines="2"
+                android:padding="16dp"
+                android:layout_below="@id/frame_image" />
 
-        <ImageButton
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:id="@+id/imageButton_minus"
-            android:src="@drawable/ic_action_minus"
-            android:layout_below="@+id/frame_image"
-            android:layout_toStartOf="@id/imageButton_plus" />
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:id="@+id/imageButton_plus"
+                android:src="@drawable/ic_action_add"
+                android:layout_below="@+id/frame_image"
+                android:layout_alignParentEnd="true" />
 
-        <TextView
-            android:id="@+id/textview_introduction"
-            android:layout_width="match_parent"
-            android:layout_height="wrap_content"
-            android:padding="16dp"
-            android:layout_below="@id/textview_title" />
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:id="@+id/imageButton_minus"
+                android:src="@drawable/ic_action_minus"
+                android:layout_below="@+id/frame_image"
+                android:layout_toStartOf="@id/imageButton_plus" />
 
-        <ImageButton
-            android:layout_width="wrap_content"
-            android:layout_height="match_parent"
-            android:id="@+id/imageButton_callPhone"
-            android:src="@android:drawable/ic_menu_call"
-            android:layout_below="@+id/textview_title"
-            android:visibility="invisible"
-            android:layout_alignParentEnd="true" />
+            <TextView
+                android:id="@+id/textview_introduction"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:padding="16dp"
+                android:layout_below="@id/textview_title" />
 
-    </RelativeLayout>
+            <ImageButton
+                android:layout_width="wrap_content"
+                android:layout_height="match_parent"
+                android:id="@+id/imageButton_callPhone"
+                android:src="@android:drawable/ic_menu_call"
+                android:layout_below="@+id/textview_title"
+                android:visibility="invisible"
+                android:layout_alignParentEnd="true" />
 
-</ScrollView>
+        </RelativeLayout>
+
+    </ScrollView>
+</android.support.v4.widget.SwipeRefreshLayout>
