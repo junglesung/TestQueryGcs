@@ -36,4 +36,11 @@ public class MyConstants {
     // Values
     public static final int URL_CONNECTION_READ_TIMEOUT = 10000;  // milliseconds
     public static final int URL_CONNECTION_CONNECT_TIMEOUT = 15000;  // milliseconds
+
+    // Activity and Fragment saves instance state
+    public static final String CREATEITEMACTIVITY_MCURRENTPHOTOURI = "CreateItemActivity_mCurrentPhotoUri";
+    public static final String CREATEITEMACTIVITY_MGCSPHOTOURL = "CreateItemActivity_mGcsPhotoUrl";
+    public static final String CREATEITEMACTIVITY_MPHONENUMBER = "CreateItemActivity_mPhoneNumber";
+    public static final String CREATEITEMACTIVITY_MSCREENORIENTATION = "CreateItemActivity_mScreenOrientation";
+    public static final String CREATEITEMACTIVITY_MSTATE = "CreateItemActivity_mState";
 }

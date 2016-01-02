@@ -52,6 +52,11 @@ public class MainActivity extends GoogleApiActivity {
             fragment = new SwipeRefreshLayoutBasicFragment();
             transaction.replace(R.id.sample_content_fragment, fragment);
             transaction.commit();
+        } else {
+            fragment = (SwipeRefreshLayoutBasicFragment) getFragmentManager().findFragmentById(R.id.sample_content_fragment);
+            if (fragment == null) {
+                Log.e(LOG_TAG, "fragment = null");
+            }
         }
 
         setOnGooglePlayServiceConnectedListener(new OnGooglePlayServiceConnectedListener() {
