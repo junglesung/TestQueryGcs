@@ -104,6 +104,12 @@ public class MainActivity extends GoogleApiActivity {
         fragment.tryRefresh();
     }
 
+    @Override
+    protected void onGcmRefresh() {
+        super.onGcmRefresh();
+        fragment.forceRefresh();
+    }
+
     private void createItem() {
         //
         Intent intent = new Intent(this, CreateItemActivity.class);

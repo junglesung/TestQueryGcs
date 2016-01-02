@@ -20,6 +20,7 @@ import android.app.Activity;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.ActivityInfo;
 import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
@@ -222,6 +223,7 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
         // Construct an Intent as normal
         Intent intent = new Intent(getActivity(), DetailActivity.class);
         intent.putExtra(DetailActivity.EXTRA_PARAM_ITEM, itemJson);
+        intent.putExtra(DetailActivity.EXTRA_PARAM_ID, item.getId());
 
             // BEGIN_INCLUDE(start_activity)
         if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
@@ -255,14 +257,19 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
         }
     }
 
+    // Force refreshing if it's not refreshing
+    public void forceRefresh() {
+        if (!mSwipeRefreshLayout.isRefreshing()) {
+            initiateRefresh();
+        }
+    }
+
     // BEGIN_INCLUDE (initiate_refresh)
     /**
      * By abstracting the refresh process to a single method, the app allows both the
      * SwipeGestureLayout onRefresh() method and the Refresh action item to refresh the content.
      */
     private void initiateRefresh() {
-        flagRefreshNeeded = true;
-
         // Check Google Instance ID registration
         Activity activity = getActivity();
         if (activity == null) {
@@ -325,8 +332,21 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
 
     // Get the latest items from the server in background
     private class QueryItemTask extends AsyncTask<Void, Void, Item2[]> {
-
         static final String QUERY_ITEM_URL = "https://aliza-1148.appspot.com/api/0.1/items";
+        // Screen orientation. Save and disable screen rotation in order to prevent screen rotation destroying the activity and the AsyncTask.
+        private int screenOrientation;
+
+        @Override
+        protected void onPreExecute() {
+            // Disable screen rotation
+            Activity activity = getActivity();
+            if (activity == null) {
+                Log.e(LOG_TAG, "Activity = null");
+                return;
+            }
+            screenOrientation = activity.getRequestedOrientation();
+            activity.setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
+        }
 
         @Override
         protected Item2[] doInBackground(Void... params) {
@@ -339,6 +359,14 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
 
             // Tell the Fragment that the refresh has completed
             onRefreshComplete(result);
+
+            // Enable screen rotation
+            Activity activity = getActivity();
+            if (activity == null) {
+                Log.e(LOG_TAG, "Activity = null");
+                return;
+            }
+            activity.setRequestedOrientation(screenOrientation);
         }
 
         // Send GET to the server

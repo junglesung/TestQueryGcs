@@ -12,6 +12,7 @@ public class MyConstants {
     public static final String UNREGISTRATION_COMPLETE = "unregistrationComplete";
     public static final String SUBSCRIPTION_COMPLETE = "subscriptionComplete";
     public static final String UNSUBSCRIBING_COMPLETE = "unsubscribingComplete";
+    public static final String REFRESH = "refresh";
 
     // Intent extra data
     public static final String TOPIC = "topic";

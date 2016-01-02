@@ -47,6 +47,9 @@ public class GoogleCloudMessagingActivity extends Activity {
                     case MyConstants.UNSUBSCRIBING_COMPLETE:
                         Toast.makeText(getApplicationContext(), "Unsubscribe topic successfully", Toast.LENGTH_SHORT).show();
                         break;
+                    case MyConstants.REFRESH:
+                        onGcmRefresh();
+                        break;
                     default:
                         Log.d(LOG_TAG, "Main activity received an unrecognized action");
                 }
@@ -66,6 +69,8 @@ public class GoogleCloudMessagingActivity extends Activity {
                 new IntentFilter(MyConstants.SUBSCRIPTION_COMPLETE));
         LocalBroadcastManager.getInstance(this).registerReceiver(mRegistrationBroadcastReceiver,
                 new IntentFilter(MyConstants.UNSUBSCRIBING_COMPLETE));
+        LocalBroadcastManager.getInstance(this).registerReceiver(mRegistrationBroadcastReceiver,
+                new IntentFilter(MyConstants.REFRESH));
     }
 
     @Override
@@ -99,6 +104,10 @@ public class GoogleCloudMessagingActivity extends Activity {
     // Trigger when a broadcast intent with action UNREGISTRATION_COMPLETE is received
     protected void onGcmUnregistrationComplete() {
         showToken();
+    }
+
+    // Trigger when a broadcast intent with action REFRESH is received
+    protected void onGcmRefresh() {
     }
 
     public void subscribeTopic(String topic) {

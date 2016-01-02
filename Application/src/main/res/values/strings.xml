@@ -80,5 +80,6 @@
     <string name="data_is_out_of_date_please_refresh">Data is out of date. Please refresh.</string>
     <string name="phone_app_is_not_found">Phone APP is not found.</string>
     <string name="call_your_partner">Call your partner.</string>
+    <string name="bug_null_item_id">Bug: NULL item ID. Please report.</string>
 
 </resources>

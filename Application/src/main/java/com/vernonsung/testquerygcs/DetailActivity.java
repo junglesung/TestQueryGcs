@@ -35,6 +35,7 @@ import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.app.NavUtils;
+import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.test.PerformanceTestCase;
@@ -169,6 +170,28 @@ public class DetailActivity extends Activity {
         }
         // END_INCLUDE(detail_set_view_name)
 
+        // Show item data
+        refreshByIntentItemId();
+    }
+
+    // Called by onCreate()
+    // Get item ID from intent and trigger refresh to get item data from the server and show
+    private void refreshByIntentItemId() {
+        // Get item ID from intent
+        String id = getIntent().getStringExtra(EXTRA_PARAM_ID);
+        if (id == null) {
+            Log.e(LOG_TAG, "Get null item ID from intent");
+            Toast.makeText(this, R.string.bug_null_item_id, Toast.LENGTH_LONG).show();
+            NavUtils.navigateUpFromSameTask(this);
+        }
+        mItem = new Item2();
+        mItem.setId(id);
+        initiateRefresh();
+    }
+
+    // Called by onCreate()
+    // Get item data from intent and show
+    private void showIntentItem(Bundle savedInstanceState) {
         // Get item in JSON format
         String itemJson = getIntent().getStringExtra(EXTRA_PARAM_ITEM);
         if (itemJson == null) {
@@ -401,13 +424,10 @@ public class DetailActivity extends Activity {
 
         @Override
         protected void onPostExecute(Void v) {
-            // Enable screen rotation first because SUCCESS will execute another AsyncTask.
-            setRequestedOrientation(screenOrientation);
-
             switch (status) {
                 case SUCCESS:
-                    // Get the latest item data from the server
-                    initiateRefresh();
+                    // Tell all activities to refresh
+                    sendRefreshBroadcast();
                     break;
                 case ITEM_CLOSED:
                     showItemCloseDialog();
@@ -419,6 +439,9 @@ public class DetailActivity extends Activity {
                     Toast.makeText(getApplicationContext(), getString(R.string.server_is_busy_please_try_again_later), Toast.LENGTH_SHORT).show();
                     break;
             }
+
+            // Enable screen rotation
+            setRequestedOrientation(screenOrientation);
         }
 
         // HTTP PUT change to the server
@@ -502,7 +525,6 @@ public class DetailActivity extends Activity {
             } catch (Exception e) {
                 e.printStackTrace();
                 Log.d(LOG_TAG, "Update item failed because " + e.getMessage());
-                Log.d(LOG_TAG, e.getStackTrace().toString());
                 status = UpdateItemStatus.ANDROID_FAILURE;
             } finally {
                 if (urlConnection != null) {
@@ -510,6 +532,12 @@ public class DetailActivity extends Activity {
                 }
             }
         }
+    }
+
+    private void sendRefreshBroadcast() {
+        // Notify UI to refresh
+        Intent refreshIntent = new Intent(MyConstants.REFRESH);
+        LocalBroadcastManager.getInstance(this).sendBroadcast(refreshIntent);
     }
 
     // Make a phone call to the owner or the member
@@ -528,7 +556,7 @@ public class DetailActivity extends Activity {
             Toast.makeText(this, R.string.data_is_out_of_date_please_refresh, Toast.LENGTH_LONG).show();
             return;
         }
-        if (mItem.getMembers()[0].getUserkey() == userId) {
+        if (mItem.getMembers()[0].getUserkey().equals(userId)) {
             // Call the member
             phoneNumber = mItem.getMembers()[1].getPhonenumber();
         } else {
@@ -593,9 +621,6 @@ public class DetailActivity extends Activity {
 
         @Override
         protected void onPostExecute(Item2 v) {
-            // Enable screen rotation
-            setRequestedOrientation(screenOrientation);
-
             switch (status) {
                 case SUCCESS:
                     // Store item info
@@ -615,6 +640,9 @@ public class DetailActivity extends Activity {
             }
             // Stop the refreshing indicator
             mSwipeRefreshLayout.setRefreshing(false);
+
+            // Enable screen rotation
+            setRequestedOrientation(screenOrientation);
         }
 
         // HTTP GET item from the server
@@ -664,7 +692,6 @@ public class DetailActivity extends Activity {
             } catch (Exception e) {
                 e.printStackTrace();
                 Log.d(LOG_TAG, "Get item failed because " + e.getMessage());
-                Log.d(LOG_TAG, e.getStackTrace().toString());
                 status = UpdateItemStatus.ANDROID_FAILURE;
             } finally {
                 if (urlConnection != null) {
