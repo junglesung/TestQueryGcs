@@ -117,7 +117,12 @@ public class PhoneNumberDialogFragment extends DialogFragment {
     }
 
     private void okClicked() {
+        // Get user input phone number
         phoneNumber = mEditTextPhone.getText().toString();
+        // Store to shared preference
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(mActivityHost);
+        sharedPreferences.edit().putString(MyConstants.PHONE_NUMBER, phoneNumber).apply();
+
         Log.d(LOG_TAG, "PhoneNumberDialog returns phone number " + phoneNumber);
         mListener.onDialogPositiveClick(PhoneNumberDialogFragment.this);
     }

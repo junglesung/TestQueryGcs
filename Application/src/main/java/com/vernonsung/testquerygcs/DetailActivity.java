@@ -21,6 +21,7 @@ import com.google.gson.Gson;
 import com.squareup.picasso.Picasso;
 
 import android.app.AlertDialog;
+import android.app.DialogFragment;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -45,6 +46,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 
 import java.io.BufferedOutputStream;
@@ -65,7 +67,8 @@ import javax.net.ssl.HttpsURLConnection;
  * Our secondary Activity which is launched from {@link MainActivity}. Has a simple detail UI
  * which has a large banner image, title and body text.
  */
-public class DetailActivity extends GoogleApiActivity {
+public class DetailActivity extends GoogleApiActivity
+                         implements PhoneNumberDialogFragment.PhoneNumberDialogListener {
 
     // Results of making a HTTP request to the server
     public enum UpdateItemStatus {
@@ -102,6 +105,8 @@ public class DetailActivity extends GoogleApiActivity {
     // Properties
     private Item2 mItem;
     private int myAttendant = 0;
+    // User input phone number got from dialog
+    private String mPhoneNumber;
     // Automatically retry when network is OK.
     boolean flagRefreshNeeded = false;
 
@@ -145,7 +150,7 @@ public class DetailActivity extends GoogleApiActivity {
         mButtonCallPhone.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO: Call others
+                callOthersPhone();
             }
         });
 
@@ -183,6 +188,33 @@ public class DetailActivity extends GoogleApiActivity {
     protected void onGcmRefresh() {
         super.onGcmRefresh();
         forceRefresh();
+    }
+
+    @Override
+    public void onDialogPositiveClick(DialogFragment dialog) {
+        PhoneNumberDialogFragment mPhoneNumberDialogFragment;
+        try {
+            mPhoneNumberDialogFragment = (PhoneNumberDialogFragment) dialog;
+        } catch (ClassCastException e) {
+            // The activity doesn't implement the interface, throw exception
+            throw new ClassCastException(dialog.toString()
+                    + " must be PhoneNumberDialogFragment");
+        }
+        mPhoneNumber = mPhoneNumberDialogFragment.getPhoneNumber();
+        if (mPhoneNumber == null || mPhoneNumber.isEmpty()) {
+            Log.d(LOG_TAG, "Phone number is empty");
+            Toast.makeText(this, getString(R.string.wrong_phone_number_format_please_enter_again), Toast.LENGTH_LONG).show();
+            return;
+        }
+        Log.d(LOG_TAG, "Got phone number " + mPhoneNumber);
+
+        // Continue creating the item
+        attend();
+    }
+
+    @Override
+    public void onDialogNegativeClick(DialogFragment dialog) {
+        Log.d(LOG_TAG, "Return from Phone Dialog canceled");
     }
 
     // Called by onCreate()
@@ -275,7 +307,7 @@ public class DetailActivity extends GoogleApiActivity {
         }
 
         // Show call button
-        updateButtonVisibility();
+        updatePhoneButtonVisibility();
     }
 
     /**
@@ -349,8 +381,8 @@ public class DetailActivity extends GoogleApiActivity {
     }
 
     // Set call buttons' visibility
-    private void updateButtonVisibility() {
-        if (myAttendant > 0 && mItem.getAttendant() >= 2) {
+    private void updatePhoneButtonVisibility() {
+        if (myAttendant > 0 && mItem.getMembers().length >= 2) {
             // Show call button
             mButtonCallPhone.setVisibility(View.VISIBLE);
         } else {
@@ -374,8 +406,23 @@ public class DetailActivity extends GoogleApiActivity {
         }
     }
 
+    // Show dialog for users to input/confirm their phone numbers
+    // Dialog will really shows after returning to activity
+    public void showPhoneNumberDialog() {
+        // Create an instance of the dialog fragment and show it
+        DialogFragment dialog = new PhoneNumberDialogFragment();
+        dialog.show(getFragmentManager(), "PhoneNumberDialogFragment");
+    }
+
     // Attend in the item
     private void attend() {
+        // Check phone number
+        if (myAttendant == 0 && (mPhoneNumber == null || mPhoneNumber.isEmpty())) {
+            showPhoneNumberDialog();
+            // Dialog will really shows after returning to activity
+            return;
+        }
+
         modifyAttendant(1);
     }
 
@@ -385,6 +432,14 @@ public class DetailActivity extends GoogleApiActivity {
     }
 
     private void modifyAttendant(int change) {
+        // Check Google Instance ID registration
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        boolean isTokenSentToServer = sharedPreferences.getBoolean(MyConstants.SENT_TOKEN_TO_SERVER, false);
+        if (!isTokenSentToServer) {
+            Toast.makeText(this, getString(R.string.app_is_not_registered_please_check_internet_and_retry_later), Toast.LENGTH_LONG).show();
+            return;
+        }
+
         // Check network connection ability and then access Google Cloud Storage
         ConnectivityManager connMgr = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
@@ -499,7 +554,16 @@ public class DetailActivity extends GoogleApiActivity {
                 urlConnection.setRequestMethod("PUT");
 
                 // Convert item to JSON string
-                data = new JSONObject().put("attendant", change).toString().getBytes();
+                JSONObject jsonItem = new JSONObject();
+                JSONObject jsonMember = new JSONObject();
+                JSONArray  jsonMembers = new JSONArray();
+                jsonMember.put("attendant", change);
+                if (change >= 1 && mPhoneNumber != null && !mPhoneNumber.isEmpty()) {
+                    jsonMember.put("phonenumber", mPhoneNumber);
+                }
+                jsonMembers.put(jsonMember);
+                jsonItem.put("members", jsonMembers);
+                data = jsonItem.toString().getBytes();
 
                 // For best performance, you should call either setFixedLengthStreamingMode(int) when the body length is known in advance, or setChunkedStreamingMode(int) when it is not. Otherwise HttpURLConnection will be forced to buffer the complete request body in memory before it is transmitted, wasting (and possibly exhausting) heap and increasing latency.
                 size = data.length;
@@ -530,7 +594,7 @@ public class DetailActivity extends GoogleApiActivity {
 
                 // Vernon debug
                 Log.d(LOG_TAG, urlConnection.getRequestMethod() + " " +
-                        urlConnection.getURL().toString());
+                        urlConnection.getURL().toString() + new String(data));
 
                 // Send and get response
                 // getResponseCode() will automatically trigger connect()
