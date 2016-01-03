@@ -254,6 +254,7 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
     public void tryRefresh() {
         if (!mSwipeRefreshLayout.isRefreshing() && flagRefreshNeeded) {
             initiateRefresh();
+            flagRefreshNeeded = false;
         }
     }
 
@@ -310,9 +311,6 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
 
         // Stop the refreshing indicator
         mSwipeRefreshLayout.setRefreshing(false);
-
-        // Set flag
-        flagRefreshNeeded = false;
     }
     // END_INCLUDE (refresh_complete)
 

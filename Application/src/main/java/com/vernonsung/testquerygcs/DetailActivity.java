@@ -20,7 +20,6 @@ import com.google.android.gms.iid.InstanceID;
 import com.google.gson.Gson;
 import com.squareup.picasso.Picasso;
 
-import android.app.Activity;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
@@ -38,7 +37,6 @@ import android.support.v4.app.NavUtils;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.test.PerformanceTestCase;
 import android.transition.Transition;
 import android.util.Log;
 import android.view.View;
@@ -59,7 +57,6 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
-import java.util.Objects;
 import java.util.TimeZone;
 
 import javax.net.ssl.HttpsURLConnection;
@@ -68,7 +65,7 @@ import javax.net.ssl.HttpsURLConnection;
  * Our secondary Activity which is launched from {@link MainActivity}. Has a simple detail UI
  * which has a large banner image, title and body text.
  */
-public class DetailActivity extends Activity {
+public class DetailActivity extends GoogleApiActivity {
 
     // Results of making a HTTP request to the server
     public enum UpdateItemStatus {
@@ -105,6 +102,8 @@ public class DetailActivity extends Activity {
     // Properties
     private Item2 mItem;
     private int myAttendant = 0;
+    // Automatically retry when network is OK.
+    boolean flagRefreshNeeded = false;
 
     // Threads
     private UpdateItemTask mUpdateItemTask;
@@ -171,12 +170,24 @@ public class DetailActivity extends Activity {
         // END_INCLUDE(detail_set_view_name)
 
         // Show item data
-        refreshByIntentItemId();
+        refreshByIntentItemId(savedInstanceState);
+    }
+
+    @Override
+    protected void onGcmRegistrationComplete() {
+        super.onGcmRegistrationComplete();
+        tryRefresh();
+    }
+
+    @Override
+    protected void onGcmRefresh() {
+        super.onGcmRefresh();
+        forceRefresh();
     }
 
     // Called by onCreate()
     // Get item ID from intent and trigger refresh to get item data from the server and show
-    private void refreshByIntentItemId() {
+    private void refreshByIntentItemId(Bundle savedInstanceState) {
         // Get item ID from intent
         String id = getIntent().getStringExtra(EXTRA_PARAM_ID);
         if (id == null) {
@@ -186,7 +197,12 @@ public class DetailActivity extends Activity {
         }
         mItem = new Item2();
         mItem.setId(id);
-        initiateRefresh();
+
+        if (savedInstanceState != null) {
+            initiateRefresh();
+        } else {
+            flagRefreshNeeded = true;
+        }
     }
 
     // Called by onCreate()
@@ -209,17 +225,14 @@ public class DetailActivity extends Activity {
         }
 
         if (savedInstanceState == null) {
-            // The first time, show the item from the intent.
-            loadItem();
+            showItem();
         } else {
-            // Otherwise, refresh the latest data from the server by the item key got from the intent.
-            // loadItem() will be executed automatically after HTTP response from the server.
             initiateRefresh();
         }
     }
 
     // Show detail information
-    private void loadItem() {
+    private void showItem() {
         // Show attendants.
         SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         String userId = sharedPreferences.getString(MyConstants.USER_ID, "");
@@ -345,6 +358,22 @@ public class DetailActivity extends Activity {
         }
 
     }
+
+    // Refresh if needed
+    public void tryRefresh() {
+        if (!mSwipeRefreshLayout.isRefreshing() && flagRefreshNeeded) {
+            initiateRefresh();
+            flagRefreshNeeded = false;
+        }
+    }
+
+    // Force refreshing if it's not refreshing
+    public void forceRefresh() {
+        if (!mSwipeRefreshLayout.isRefreshing()) {
+            initiateRefresh();
+        }
+    }
+
     // Attend in the item
     private void attend() {
         modifyAttendant(1);
@@ -626,7 +655,7 @@ public class DetailActivity extends Activity {
                     // Store item info
                     mItem = v;
                     // Show new item info
-                    loadItem();
+                    showItem();
                     break;
                 case ITEM_CLOSED:
                     showItemCloseDialog();

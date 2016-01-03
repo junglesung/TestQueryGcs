@@ -44,4 +44,9 @@ public class MyConstants {
     public static final String CREATEITEMACTIVITY_MPHONENUMBER = "CreateItemActivity_mPhoneNumber";
     public static final String CREATEITEMACTIVITY_MSCREENORIENTATION = "CreateItemActivity_mScreenOrientation";
     public static final String CREATEITEMACTIVITY_MSTATE = "CreateItemActivity_mState";
+
+    // Google Cloud Messaging
+    public static final String GCM_MESSAGE = "message";
+    public static final String GCM_ITEMID = "itemid";
+    public static final String GCM_REQUESTUSERID = "requestuserid";
 }

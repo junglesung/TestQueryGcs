@@ -18,6 +18,7 @@ package com.vernonsung.testquerygcs;
 
 import android.app.NotificationManager;
 import android.app.PendingIntent;
+import android.app.TaskStackBuilder;
 import android.content.Context;
 import android.content.Intent;
 import android.media.RingtoneManager;
@@ -43,7 +44,8 @@ public class MyGcmListenerService extends GcmListenerService {
     // [START receive_message]
     @Override
     public void onMessageReceived(String from, Bundle data) {
-        String message = data.getString("message");
+        String message = data.getString(MyConstants.GCM_MESSAGE);
+        String itemId = data.getString(MyConstants.GCM_ITEMID);
         Log.d(LOG_TAG, "From: " + from);
         Log.d(LOG_TAG, "Message: " + message);
 
@@ -69,7 +71,7 @@ public class MyGcmListenerService extends GcmListenerService {
          */
         // Some device won't send notification automatically when notification field is received.
         // So it's important to send manually.
-        sendNotification(message);
+        sendNotification(message, itemId);
 
         // Notify UI to refresh
         sendBroadcast();
@@ -82,16 +84,16 @@ public class MyGcmListenerService extends GcmListenerService {
      *
      * @param message GCM message received.
      */
-    private void sendNotification(String message) {
-        Intent intent = new Intent(this, MainActivity.class);
+    private void sendNotification(String message, String itemId) {
+        Intent intent = new Intent(this, DetailActivity.class);
+        intent.putExtra(DetailActivity.EXTRA_PARAM_ID, itemId);
         intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP);
         PendingIntent pendingIntent = PendingIntent.getActivity(this, 0 /* Request code */, intent,
                 PendingIntent.FLAG_ONE_SHOT);
-
         Uri defaultSoundUri= RingtoneManager.getDefaultUri(RingtoneManager.TYPE_NOTIFICATION);
         NotificationCompat.Builder notificationBuilder = new NotificationCompat.Builder(this)
                 .setSmallIcon(R.drawable.ic_launcher)
-                .setContentTitle("GCM Message")
+                .setContentTitle(getString(R.string.title_notification))
                 .setContentText(message)
                 .setAutoCancel(true)
                 .setSound(defaultSoundUri)
