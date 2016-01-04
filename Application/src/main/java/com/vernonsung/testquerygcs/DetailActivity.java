@@ -660,7 +660,7 @@ public class DetailActivity extends GoogleApiActivity
         // Open Phone APP
         Intent intent = new Intent(Intent.ACTION_DIAL);
         intent.setData(Uri.parse("tel:" + phoneNumber));
-        if (intent.resolveActivity(getPackageManager()) != null) {
+        if (intent.resolveActivity(getPackageManager()) == null) {
             Log.d(LOG_TAG, "Can't find phone APP");
             Toast.makeText(this, R.string.phone_app_is_not_found, Toast.LENGTH_LONG).show();
             return;
