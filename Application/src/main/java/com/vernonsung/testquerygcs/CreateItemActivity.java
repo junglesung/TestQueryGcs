@@ -300,6 +300,7 @@ public class CreateItemActivity extends GoogleApiActivity
         protected void onPostExecute(String url) {
             mGcsPhotoUrl = url;
             if (url == null) {
+                Toast.makeText(getApplicationContext(), R.string.server_error_please_choose_a_jpeg_photo_and_try_again, Toast.LENGTH_LONG).show();
                 changeState(CreateItemState.INITIAL);
             } else {
                 // Upload image successfully

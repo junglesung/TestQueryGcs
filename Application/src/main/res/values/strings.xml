@@ -27,6 +27,7 @@
     <string name="select_or_take_a_photo">Select or take a photo</string>
     <string name="uploading_image">Uploading image…%d%%</string>
     <string name="sending">Sending…</string>
+    <string name="server_error_please_choose_a_jpeg_photo_and_try_again">Server error. Please choose a JPEG photo and try again.</string>
     <string name="create_failed_warning">Create failed, please correct data and send again.</string>
     <string name="create_item_successfully">Create item successfully</string>
     <string name="power_safe_warning">To notify you others\' attendance ASAP, please don\'t let your phone enter power safe mode.</string>
