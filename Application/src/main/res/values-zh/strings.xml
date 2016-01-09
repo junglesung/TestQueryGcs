@@ -6,8 +6,8 @@
     <string name="call_your_partner">打給夥伴</string>
     <string name="cancel">取消</string>
     <string name="connection_error">連線錯誤</string>
-    <string name="create_failed_warning">新增失敗，請修正資料並重送</string>
-    <string name="create_item_successfully">新增成功</string>
+    <string name="create_failed_warning">發起失敗，請修正資料並重送</string>
+    <string name="create_item_successfully">發起成功</string>
     <string name="data_is_out_of_date_please_refresh">資料過時，請重新整理</string>
     <string name="data_is_out_of_date_reload_automatically">資料過時，自動更新</string>
     <string name="ex_mobile_phone_number">例，0912345678</string>
