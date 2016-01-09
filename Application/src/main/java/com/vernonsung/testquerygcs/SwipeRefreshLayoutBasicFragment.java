@@ -471,7 +471,7 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
 
             // Load the thumbnail image
             ImageView image = (ImageView) view.findViewById(R.id.imageview_item);
-            Picasso.with(image.getContext()).load(item.getThumbnailUrl()).into(image);
+            Picasso.with(image.getContext()).load(item.getThumbnail()).into(image);
 
             // Calculate distance
             int meters = -1;

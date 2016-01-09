@@ -69,6 +69,7 @@ public class CreateItemActivity extends GoogleApiActivity
     // Current image path
     private Uri mCurrentPhotoUri;
     private String mGcsPhotoUrl;
+    private String mGcsThumbnailUrl;
     // User input phone number got from dialog
     private String mPhoneNumber;
 
@@ -243,6 +244,8 @@ public class CreateItemActivity extends GoogleApiActivity
     private class UploadImageTask extends AsyncTask<Uri, Integer, String> {
         // Screen orientation. Save and disable screen rotation in order to prevent screen rotation destroying the activity and the AsyncTask.
         private int screenOrientation;
+        String imageUrl = null;
+        String thumbnailUrl = null;
 
         @Override
         protected void onPreExecute() {
@@ -299,6 +302,7 @@ public class CreateItemActivity extends GoogleApiActivity
         @Override
         protected void onPostExecute(String url) {
             mGcsPhotoUrl = url;
+            mGcsThumbnailUrl = thumbnailUrl;
             if (url == null) {
                 Toast.makeText(getApplicationContext(), R.string.server_error_please_choose_a_jpeg_photo_and_try_again, Toast.LENGTH_LONG).show();
                 changeState(CreateItemState.INITIAL);
@@ -321,7 +325,6 @@ public class CreateItemActivity extends GoogleApiActivity
             int size;
             OutputStream out;
             InputStream in = null;
-            String imageUrl = null;
 
             // Set authentication instance ID
             urlConnection.setRequestProperty(MyConstants.HTTP_HEADER_INSTANCE_ID, InstanceID.getInstance(getApplicationContext()).getId());
@@ -395,7 +398,9 @@ public class CreateItemActivity extends GoogleApiActivity
 
                 // Get image URL
                 imageUrl = urlConnection.getHeaderField("Location");
+                thumbnailUrl = urlConnection.getHeaderField("X-Thumbnail");
                 Log.d(LOG_TAG, "Image URL " + imageUrl);
+                Log.d(LOG_TAG, "Thumbnail URL " + thumbnailUrl);
 
             } catch (Exception e) {
                 e.printStackTrace();
@@ -627,6 +632,7 @@ public class CreateItemActivity extends GoogleApiActivity
         // Item2.CreateTime is determined by the server. So just set an empty string.
         Item2 item = new Item2();
         item.setImage(mGcsPhotoUrl);
+        item.setThumbnail(mGcsThumbnailUrl);
         item.setPeople(2);
         item.setAttendant(1);
         item.setLatitude(location.getLatitude());

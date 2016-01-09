@@ -73,6 +73,7 @@ public class Item2 {
     // Property names must be lowercase because they are received and sent in JSON format
     private String id;               // Datastore ID of item kind
     private String image;            // Google Cloud Storage file URL
+    private String thumbnail;        // Google Cloud Storage file URL
     private int people;              // Satisfied people number
     private int attendant;           // Delta people number
     private double latitude;         // Format "[+-]DDD.DDDDD"
@@ -82,35 +83,9 @@ public class Item2 {
     private String gcmgroupname;  // Google Cloud Messaging unique group ID
     private String gcmgroupkey;  // Google Cloud Messaging unique group ID
 
-    private static final String LARGE_BASE_URL = "http://aliza-1148.appspot.com.storage.googleapis.com/testgcs/large/";
-    private static final String THUMB_BASE_URL = "http://aliza-1148.appspot.com.storage.googleapis.com/testgcs/thumbs/";
-
     // Default constructor
     Item2() {
         //
-    }
-
-    // Constructor
-    public Item2(String id,
-                 String image,
-                 int people,
-                 int attendant,
-                 double latitude,
-                 double longitude,
-                 String createtime,
-                 ItemMember[] members,
-                 String gcmgroupname,
-                 String gcmgroupkey) {
-        this.id = id;
-        this.image = image;
-        this.people = people;
-        this.attendant = attendant;
-        this.latitude = latitude;
-        this.longitude = longitude;
-        this.createtime = createtime;
-        this.members = members;
-        this.gcmgroupname = gcmgroupname;
-        this.gcmgroupkey = gcmgroupkey;
     }
 
     public String getId() {
@@ -127,6 +102,14 @@ public class Item2 {
 
     public void setImage(String image) {
         this.image = image;
+    }
+
+    public String getThumbnail() {
+        return thumbnail;
+    }
+
+    public void setThumbnail(String thumbnail) {
+        this.thumbnail = thumbnail;
     }
 
     public int getPeople() {
@@ -193,16 +176,6 @@ public class Item2 {
         this.gcmgroupkey = gcmgroupkey;
     }
 
-    public String getPhotoUrl() {
-//        return LARGE_BASE_URL + image;
-        return image;
-    }
-
-    public String getThumbnailUrl() {
-//        return THUMB_BASE_URL + image;
-        return image;
-    }
-
     // Android org.json is not as powerful as standard JAVA org.json.
     // There is no parser constructor for class object in JSONObject.
     // So create a transform function.
@@ -210,6 +183,7 @@ public class Item2 {
         JSONObject j = new JSONObject();
         // ID, CreateTime, NotificationKey are determined by server. So just put other properties.
         j.put("image", image);
+        j.put("thumbnail", thumbnail);
         j.put("people", people);
         j.put("attendant", attendant);
         j.put("latitude", latitude);
@@ -230,6 +204,7 @@ public class Item2 {
         return "Item2{" +
                 "id='" + id + '\'' +
                 ", image='" + image + '\'' +
+                ", thumbnail='" + thumbnail + '\'' +
                 ", people=" + people +
                 ", attendant=" + attendant +
                 ", latitude=" + latitude +

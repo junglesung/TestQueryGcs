@@ -315,7 +315,7 @@ public class DetailActivity extends GoogleApiActivity
      */
     private void loadThumbnail() {
         Picasso.with(mHeaderImageView.getContext())
-                .load(mItem.getThumbnailUrl())
+                .load(mItem.getThumbnail())
                 .into(mHeaderImageView);
     }
 
@@ -324,7 +324,7 @@ public class DetailActivity extends GoogleApiActivity
      */
     private void loadFullSizeImage() {
         Picasso.with(mHeaderImageView.getContext())
-                .load(mItem.getPhotoUrl())
+                .load(mItem.getImage())
                 .noFade()
                 .noPlaceholder()
                 .into(mHeaderImageView);
