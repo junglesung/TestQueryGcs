@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="action_settings">設定</string>
+    <string name="app_is_not_registered_please_check_internet_and_retry_later">APP未註冊，請檢察網路並重試</string>
+    <string name="bug_null_item_id">Bug: 事件ID是NULL，請回報</string>
+    <string name="call_your_partner">打給夥伴</string>
+    <string name="cancel">取消</string>
+    <string name="connection_error">連線錯誤</string>
+    <string name="create_failed_warning">新增失敗，請修正資料並重送</string>
+    <string name="create_item_successfully">新增成功</string>
+    <string name="data_is_out_of_date_please_refresh">資料過時，請重新整理</string>
+    <string name="data_is_out_of_date_reload_automatically">資料過時，自動更新</string>
+    <string name="ex_mobile_phone_number">例，0912345678</string>
+    <string name="external_storage_is_not_writable">儲存空間無法寫入</string>
+    <string name="get_location_failed_because_google_play_service_is_not_installed">無法抓取所在位置，請確定Google play背景服務已啟動</string>
+    <string name="get_location_failed_because_gps_is_off">無法抓取所在位置，請確認GPS已開</string>
+    <string name="go_to_the_item_list">前往事件清單</string>
+    <string name="hello_world">世界安安</string>
+    <string name="invalid">不能用的</string>
+    <string name="item_was_closed_since_the_owner_left">事件結束因為發起者已離開</string>
+    <string name="menu_refresh">重新整理</string>
+    <string name="more">進階</string>
+    <string name="no_app_to_choose_an_image">沒有選擇照片的APP</string>
+    <string name="no_camera_app">沒有照相APP</string>
+    <string name="no_network_connection_available">沒有可用的網路連線</string>
+    <string name="ok">確認</string>
+    <string name="phone_app_is_not_found">找不到打電話的APP</string>
+    <string name="phone_number_for_others_to_contact">讓別人聯絡的電話號碼</string>
+    <string name="please_check_the_network_and_try_again">請確認網路再試一次</string>
+    <string name="power_safe_warning">為了在其他人加入的時候立即收到通知，請確認不進入省電模式</string>
+    <string name="select_or_take_a_photo">拍照或選擇一張照片</string>
+    <string name="send">傳送</string>
+    <string name="sending">傳送中...</string>
+    <string name="server_error_please_choose_a_jpeg_photo_and_try_again">伺服器錯誤，請選擇一張JPEG照片再試一次</string>
+    <string name="server_is_busy_please_try_again_later">伺服器忙碌，請再試一次</string>
+    <string name="server_is_connected">連上伺服器</string>
+    <string name="simple">簡單</string>
+    <string name="title_activity_create_item">發起事件</string>
+    <string name="title_activity_item_detail">細節</string>
+    <string name="uploading_image">上傳圖片...%d%%</string>
+    <string name="valid">可用的</string>
+    <string name="wait_for_1_friend">等待一個朋友加入</string>
+    <string name="wrong_phone_number_format_please_enter_again">錯誤的電話格式，請再輸入一次</string>
+</resources>
