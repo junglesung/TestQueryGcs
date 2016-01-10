@@ -467,29 +467,33 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
                 view = getActivity().getLayoutInflater().inflate(R.layout.grid_item, viewGroup, false);
             }
 
-            final Item2 item = getItem(position);
+            try {
+                final Item2 item = getItem(position);
 
-            // Load the thumbnail image
-            ImageView image = (ImageView) view.findViewById(R.id.imageview_item);
-            Picasso.with(image.getContext()).load(item.getThumbnail()).into(image);
+                // Load the thumbnail image
+                ImageView image = (ImageView) view.findViewById(R.id.imageview_item);
+                Picasso.with(image.getContext()).load(item.getThumbnail()).into(image);
 
-            // Calculate distance
-            int meters = -1;
-            float results[] = new float[1];
-            double dstLatitude = item.getLatitude();
-            double dstLongitude = item.getLongitude();
-            if (here != null && dstLatitude != 0 && dstLongitude != 0) {
-                Location.distanceBetween(here.getLatitude(), here.getLongitude(),
-                                       dstLatitude, dstLongitude, results);
-                meters = (int) results[0];
-            }
+                // Calculate distance
+                int meters = -1;
+                float results[] = new float[1];
+                double dstLatitude = item.getLatitude();
+                double dstLongitude = item.getLongitude();
+                if (here != null && dstLatitude != 0 && dstLongitude != 0) {
+                    Location.distanceBetween(here.getLatitude(), here.getLongitude(),
+                                           dstLatitude, dstLongitude, results);
+                    meters = (int) results[0];
+                }
 
-            // Set the TextView's contents
-            TextView name = (TextView) view.findViewById(R.id.textview_name);
-            if (meters == -1) {
-                name.setText(item.getAttendant() + "/" + item.getPeople());
-            } else {
-                name.setText(item.getAttendant() + "/" + item.getPeople() + "    " + meters + "m");
+                // Set the TextView's contents
+                TextView name = (TextView) view.findViewById(R.id.textview_name);
+                if (meters == -1) {
+                    name.setText(item.getAttendant() + "/" + item.getPeople());
+                } else {
+                    name.setText(item.getAttendant() + "/" + item.getPeople() + "    " + meters + "m");
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
             }
 
             return view;

@@ -66,6 +66,8 @@ public class CreateItemActivity extends GoogleApiActivity
     // URL
     private final String UPLOAD_IMAGE_URL = "https://aliza-1148.appspot.com/api/0.1/storeImage";
     private final String CREATE_ITEM_URL = "https://aliza-1148.appspot.com/api/0.1/items";
+    // Take photo folder
+    private File mStorageDir;
     // Current image path
     private Uri mCurrentPhotoUri;
     private String mGcsPhotoUrl;
@@ -93,6 +95,7 @@ public class CreateItemActivity extends GoogleApiActivity
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_create_item);
 
+        // UI
         mImageView = (ImageView) findViewById(R.id.imageview_create_item);
 
         mButtonCamera = (ImageButton) findViewById(R.id.imagebutton_camera);
@@ -130,6 +133,8 @@ public class CreateItemActivity extends GoogleApiActivity
         mTextViewInfo = (TextView) findViewById(R.id.textview_information);
 
         // Restore or initial
+        mStorageDir = new File(Environment.getExternalStoragePublicDirectory(
+                Environment.DIRECTORY_PICTURES), getString(R.string.app_name));
         if (savedInstanceState != null) {
             mCurrentPhotoUri = savedInstanceState.getParcelable(MyConstants.CREATEITEMACTIVITY_MCURRENTPHOTOURI);
             if (mCurrentPhotoUri != null) {
@@ -146,13 +151,6 @@ public class CreateItemActivity extends GoogleApiActivity
         } else {
             changeState(CreateItemState.INITIAL);
         }
-    }
-
-    @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_create_item, menu);
-        return true;
     }
 
     @Override
@@ -485,17 +483,19 @@ public class CreateItemActivity extends GoogleApiActivity
         return Environment.MEDIA_MOUNTED.equals(state);
     }
 
+    // Create an image file name
     private File createImageFile() throws IOException {
-        // Create an image file name
+        // File name
         String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
         String imageFileName = "JPEG_" + timeStamp + "_";
-        File storageDir = new File(Environment.getExternalStoragePublicDirectory(
-                Environment.DIRECTORY_PICTURES), "AAA");
-        if (!storageDir.isDirectory() && !storageDir.mkdirs()) {
+
+        // Folder
+        if (!mStorageDir.isDirectory() && !mStorageDir.mkdirs()) {
             Log.e(LOG_TAG, "Directory not created");
             return null;
         }
-        File image = new File(storageDir, imageFileName + ".jpg");
+
+        File image = new File(mStorageDir, imageFileName + ".jpg");
 
         // Save a file: path for use with ACTION_VIEW intents
         mCurrentPhotoUri = Uri.fromFile(image);
@@ -506,11 +506,30 @@ public class CreateItemActivity extends GoogleApiActivity
         return image;
     }
 
+    private void deleteMyPhoto() {
+        if (!mStorageDir.isDirectory()) {
+            // Folder is not created
+            return;
+        }
+        String[] children = mStorageDir.list();
+        for (String s: children) {
+            File f = new File(mStorageDir, s);
+            f.delete();
+            try {
+                getContentResolver().delete(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                        MediaStore.Images.Media.DATA
+                                + "='"
+                                + f.getPath()
+                                + "'", null);
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+        }
+    }
+
     private void galleryAddPic() {
         Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
-        File f = new File(mCurrentPhotoUri.getPath());
-        Uri contentUri = Uri.fromFile(f);
-        mediaScanIntent.setData(contentUri);
+        mediaScanIntent.setData(mCurrentPhotoUri);
         this.sendBroadcast(mediaScanIntent);
     }
 
@@ -845,6 +864,8 @@ public class CreateItemActivity extends GoogleApiActivity
                 break;
             case FINISHED:
                 showFinishDialog();
+                // Delete photo if it's took by this APP
+                deleteMyPhoto();
                 break;
             default:
                 Log.d(LOG_TAG, "Undefined state " + state);

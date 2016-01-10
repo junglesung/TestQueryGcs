@@ -19,7 +19,7 @@
     <string name="invalid">不能用的</string>
     <string name="item_was_closed_since_the_owner_left">事件結束因為發起者已離開</string>
     <string name="menu_refresh">重新整理</string>
-    <string name="more">進階</string>
+    <string name="more">更新地點</string>
     <string name="no_app_to_choose_an_image">沒有選擇照片的APP</string>
     <string name="no_camera_app">沒有照相APP</string>
     <string name="no_network_connection_available">沒有可用的網路連線</string>
