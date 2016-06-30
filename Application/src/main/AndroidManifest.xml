@@ -49,24 +49,6 @@
             </intent-filter>
         </activity>
 
-        <activity
-            android:name=".DetailActivity"
-            android:label="@string/title_activity_item_detail"
-            android:parentActivityName=".MainActivity">
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.vernonsung.testquerygcs.MainActivity" />
-        </activity>
-
-        <activity
-            android:name=".CreateItemActivity"
-            android:label="@string/title_activity_create_item"
-            android:parentActivityName=".MainActivity" >
-            <meta-data
-                android:name="android.support.PARENT_ACTIVITY"
-                android:value="com.vernonsung.testquerygcs.MainActivity" />
-        </activity>
-
         <receiver
             android:name="com.google.android.gms.gcm.GcmReceiver"
             android:exported="true"

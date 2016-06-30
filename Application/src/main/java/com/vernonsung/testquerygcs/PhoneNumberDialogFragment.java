@@ -19,7 +19,7 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 /**
- * A interactive dialog for users to input their phone numbers when creating an item in CreateItemActivity
+ * A interactive dialog for users to input their phone numbers when creating an item in CreateItemFragment
  */
 public class PhoneNumberDialogFragment extends DialogFragment {
 

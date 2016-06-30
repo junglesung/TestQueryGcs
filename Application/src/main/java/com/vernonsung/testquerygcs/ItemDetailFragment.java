@@ -22,6 +22,7 @@ import com.squareup.picasso.Picasso;
 
 import android.app.AlertDialog;
 import android.app.DialogFragment;
+import android.app.Fragment;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -34,13 +35,16 @@ import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
+import android.support.annotation.Nullable;
 import android.support.v4.app.NavUtils;
 import android.support.v4.content.LocalBroadcastManager;
 import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.transition.Transition;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
@@ -67,8 +71,8 @@ import javax.net.ssl.HttpsURLConnection;
  * Our secondary Activity which is launched from {@link MainActivity}. Has a simple detail UI
  * which has a large banner image, title and body text.
  */
-public class DetailActivity extends GoogleApiActivity
-                         implements PhoneNumberDialogFragment.PhoneNumberDialogListener {
+public class ItemDetailFragment extends Fragment
+                             implements PhoneNumberDialogFragment.PhoneNumberDialogListener {
 
     // Results of making a HTTP request to the server
     public enum UpdateItemStatus {
@@ -80,9 +84,11 @@ public class DetailActivity extends GoogleApiActivity
 
     private static final String LOG_TAG = "TestGood";
 
+    // the fragment initialization parameters
+    private static final String ARG_ID = "id";                // String
+
     // Extra name for the ID parameter
     public static final String EXTRA_PARAM_ID = "detail:_id";
-    public static final String EXTRA_PARAM_ITEM = "detail:_item";
 
     // View name of the header image. Used for activity scene transitions
     public static final String VIEW_NAME_HEADER_IMAGE = "detail:header:image";
@@ -114,24 +120,48 @@ public class DetailActivity extends GoogleApiActivity
     private UpdateItemTask mUpdateItemTask;
     private GetItemTask mGetItemTask;
 
-    @Override
-    protected void onCreate(Bundle savedInstanceState) {
-        super.onCreate(savedInstanceState);
-        setContentView(R.layout.details);
+    public ItemDetailFragment() {
+        // Required empty public constructor
+    }
 
+    /**
+     * Use this factory method to create a new instance of
+     * this fragment using the provided parameters.
+     *
+     * @param item The item to show detail
+     * @return A new instance of fragment ItemDetailFragment.
+     */
+    public static ItemDetailFragment newInstance(Item2 item) {
+        ItemDetailFragment fragment = new ItemDetailFragment();
+        Bundle args = new Bundle();
+        args.putString(ARG_ID, item.getId());
+        fragment.setArguments(args);
+        return fragment;
+    }
+
+
+    @Override
+    public void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_item_detail, container, false);
         // Retrieve the SwipeRefreshLayout and ListView instances
-        mSwipeRefreshLayout = (SwipeRefreshLayout) findViewById(R.id.swiperefresh_detail);
+        mSwipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.swiperefresh_detail);
         // Set the color scheme of the SwipeRefreshLayout by providing 4 color resource ids
         mSwipeRefreshLayout.setColorSchemeResources(
                 R.color.swipe_color_1, R.color.swipe_color_2,
                 R.color.swipe_color_3, R.color.swipe_color_4);
 
-        mHeaderImageView = (ImageView) findViewById(R.id.imageview_header);
-        mHeaderTitle = (TextView) findViewById(R.id.textview_title);
-        mButtonPlus = (ImageButton) findViewById(R.id.imageButton_plus);
-        mButtonMinus = (ImageButton) findViewById(R.id.imageButton_minus);
-        mTextViewIntroduction = (TextView) findViewById(R.id.textview_introduction);
-        mButtonCallPhone = (ImageButton) findViewById(R.id.imageButton_callPhone);
+        mHeaderImageView = (ImageView) view.findViewById(R.id.imageview_header);
+        mHeaderTitle = (TextView) view.findViewById(R.id.textview_title);
+        mButtonPlus = (ImageButton) view.findViewById(R.id.imageButton_plus);
+        mButtonMinus = (ImageButton) view.findViewById(R.id.imageButton_minus);
+        mTextViewIntroduction = (TextView) view.findViewById(R.id.textview_introduction);
+        mButtonCallPhone = (ImageButton) view.findViewById(R.id.imageButton_callPhone);
 
         mButtonPlus.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -162,32 +192,14 @@ public class DetailActivity extends GoogleApiActivity
             }
         });
 
-        // BEGIN_INCLUDE(detail_set_view_name)
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP) {
-            /**
-             * Set the name of the view's which will be transition to, using the static values above.
-             * This could be done in the layout XML, but exposing it via static variables allows easy
-             * querying from other Activities
-             */
-            ViewCompat.setTransitionName(mHeaderImageView, VIEW_NAME_HEADER_IMAGE);
-            ViewCompat.setTransitionName(mHeaderTitle, VIEW_NAME_HEADER_TITLE);
-        }
-        // END_INCLUDE(detail_set_view_name)
+        return view;
+    }
 
+    @Override
+    public void onViewCreated(View view, Bundle savedInstanceState) {
+        super.onViewCreated(view, savedInstanceState);
         // Show item data
         refreshByIntentItemId(savedInstanceState);
-    }
-
-    @Override
-    protected void onGcmRegistrationComplete() {
-        super.onGcmRegistrationComplete();
-        tryRefresh();
-    }
-
-    @Override
-    protected void onGcmRefresh() {
-        super.onGcmRefresh();
-        forceRefresh();
     }
 
     @Override
@@ -203,7 +215,7 @@ public class DetailActivity extends GoogleApiActivity
         mPhoneNumber = mPhoneNumberDialogFragment.getPhoneNumber();
         if (mPhoneNumber == null || mPhoneNumber.isEmpty()) {
             Log.d(LOG_TAG, "Phone number is empty");
-            Toast.makeText(this, getString(R.string.wrong_phone_number_format_please_enter_again), Toast.LENGTH_LONG).show();
+            Toast.makeText(getActivity(), getString(R.string.wrong_phone_number_format_please_enter_again), Toast.LENGTH_LONG).show();
             return;
         }
         Log.d(LOG_TAG, "Got phone number " + mPhoneNumber);
@@ -221,11 +233,10 @@ public class DetailActivity extends GoogleApiActivity
     // Get item ID from intent and trigger refresh to get item data from the server and show
     private void refreshByIntentItemId(Bundle savedInstanceState) {
         // Get item ID from intent
-        String id = getIntent().getStringExtra(EXTRA_PARAM_ID);
+        String id = getArguments().getString(ARG_ID);
         if (id == null) {
-            Log.e(LOG_TAG, "Get null item ID from intent");
-            Toast.makeText(this, R.string.bug_null_item_id, Toast.LENGTH_LONG).show();
-            NavUtils.navigateUpFromSameTask(this);
+            throw new RuntimeException(getActivity().toString()
+                    + " must give item ID as argument");
         }
         mItem = new Item2();
         mItem.setId(id);
@@ -237,41 +248,15 @@ public class DetailActivity extends GoogleApiActivity
         }
     }
 
-    // Called by onCreate()
-    // Get item data from intent and show
-    private void showIntentItem(Bundle savedInstanceState) {
-        // Get item in JSON format
-        String itemJson = getIntent().getStringExtra(EXTRA_PARAM_ITEM);
-        if (itemJson == null) {
-            Log.e(LOG_TAG, "Get null item from intent");
-            NavUtils.navigateUpFromSameTask(this);
-        }
-
-        // Transform JSON to item
-        try {
-            mItem = new Gson().fromJson(itemJson, Item2.class);
-        } catch (Exception e) {
-            e.printStackTrace();
-            Log.e(LOG_TAG, "Wrong JSON format in transforming item");
-            NavUtils.navigateUpFromSameTask(this);
-        }
-
-        if (savedInstanceState == null) {
-            showItem();
-        } else {
-            initiateRefresh();
-        }
-    }
-
     // Show detail information
     private void showItem() {
         // Show attendants.
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
         String userId = sharedPreferences.getString(MyConstants.USER_ID, "");
         if (userId.isEmpty()) {
             Log.d(LOG_TAG, "Got empty user ID. Go to main activity.");
-            Toast.makeText(this, getString(R.string.data_is_out_of_date_reload_automatically), Toast.LENGTH_LONG).show();
-            NavUtils.navigateUpFromSameTask(this);
+            Toast.makeText(getActivity(), getString(R.string.data_is_out_of_date_reload_automatically), Toast.LENGTH_LONG).show();
+            NavUtils.navigateUpFromSameTask(getActivity());
         }
         for (Item2.ItemMember member: mItem.getMembers()) {
             if (member.getUserkey().equals(userId)) {
@@ -291,20 +276,12 @@ public class DetailActivity extends GoogleApiActivity
             timeString = sdf2.format(d);
         } catch (ParseException e) {
             e.printStackTrace();
-            Log.d(LOG_TAG, "Wrong format CreateTime from server. Show it directory");
+            Log.d(LOG_TAG, "Wrong format CreateTime from server. Show it directly");
         }
         mTextViewIntroduction.setText(timeString);
 
         // Show the image
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.LOLLIPOP && addTransitionListener()) {
-            // If we're running on Lollipop and we have added a listener to the shared element
-            // transition, load the thumbnail. The listener will load the full-size image when
-            // the transition is complete.
-            loadThumbnail();
-        } else {
-            // If all other cases we should just load the full-size image now
-            loadFullSizeImage();
-        }
+        loadFullSizeImage();
 
         // Show call button
         updatePhoneButtonVisibility();
@@ -328,56 +305,6 @@ public class DetailActivity extends GoogleApiActivity
                 .noFade()
                 .noPlaceholder()
                 .into(mHeaderImageView);
-    }
-
-    /**
-     * Try and add a {@link Transition.TransitionListener} to the entering shared element
-     * {@link Transition}. We do this so that we can load the full-size image after the transition
-     * has completed.
-     *
-     * @return true if we were successful in adding a listener to the enter transition
-     */
-    private boolean addTransitionListener() {
-        final Transition transition = getWindow().getSharedElementEnterTransition();
-
-        if (transition != null) {
-            // There is an entering shared element transition so add a listener to it
-            transition.addListener(new Transition.TransitionListener() {
-                @Override
-                public void onTransitionEnd(Transition transition) {
-                    // As the transition has ended, we can now load the full-size image
-                    loadFullSizeImage();
-
-                    // Make sure we remove ourselves as a listener
-                    transition.removeListener(this);
-                }
-
-                @Override
-                public void onTransitionStart(Transition transition) {
-                    // No-op
-                }
-
-                @Override
-                public void onTransitionCancel(Transition transition) {
-                    // Make sure we remove ourselves as a listener
-                    transition.removeListener(this);
-                }
-
-                @Override
-                public void onTransitionPause(Transition transition) {
-                    // No-op
-                }
-
-                @Override
-                public void onTransitionResume(Transition transition) {
-                    // No-op
-                }
-            });
-            return true;
-        }
-
-        // If we reach here then we have not added a listener
-        return false;
     }
 
     // Set call buttons' visibility
@@ -433,22 +360,22 @@ public class DetailActivity extends GoogleApiActivity
 
     private void modifyAttendant(int change) {
         // Check Google Instance ID registration
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
         boolean isTokenSentToServer = sharedPreferences.getBoolean(MyConstants.SENT_TOKEN_TO_SERVER, false);
         if (!isTokenSentToServer) {
-            Toast.makeText(this, getString(R.string.app_is_not_registered_please_check_internet_and_retry_later), Toast.LENGTH_LONG).show();
+            Toast.makeText(getActivity(), getString(R.string.app_is_not_registered_please_check_internet_and_retry_later), Toast.LENGTH_LONG).show();
             return;
         }
 
         // Check network connection ability and then access Google Cloud Storage
-        ConnectivityManager connMgr = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager connMgr = (ConnectivityManager)getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
         if (networkInfo == null || !networkInfo.isConnected()) {
-            Toast.makeText(this, getString(R.string.no_network_connection_available), Toast.LENGTH_SHORT).show();
+            Toast.makeText(getActivity(), getString(R.string.no_network_connection_available), Toast.LENGTH_SHORT).show();
             return;
         }
         if (mUpdateItemTask != null && mUpdateItemTask .getStatus() == AsyncTask.Status.RUNNING) {
-            Toast.makeText(this, getString(R.string.server_is_busy_please_try_again_later), Toast.LENGTH_SHORT).show();
+            Toast.makeText(getActivity(), getString(R.string.server_is_busy_please_try_again_later), Toast.LENGTH_SHORT).show();
             return;
         }
         // Execute querying thread
@@ -457,12 +384,12 @@ public class DetailActivity extends GoogleApiActivity
     }
 
     private void navigateUp() {
-        NavUtils.navigateUpFromSameTask(this);
+        getActivity().getFragmentManager().popBackStack();
     }
 
     private void showItemCloseDialog() {
         // 1. Instantiate an AlertDialog.Builder with its constructor
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         // 2. Chain together various setter methods to set the dialog characteristics
         builder.setMessage(R.string.go_to_the_item_list)
                 .setTitle(R.string.item_was_closed_since_the_owner_left);
@@ -489,8 +416,8 @@ public class DetailActivity extends GoogleApiActivity
         @Override
         protected void onPreExecute() {
             // Disable screen rotation
-            screenOrientation = getRequestedOrientation();
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
+            screenOrientation = getActivity().getRequestedOrientation();
+            getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
         }
 
         @Override
@@ -517,15 +444,15 @@ public class DetailActivity extends GoogleApiActivity
                     showItemCloseDialog();
                     break;
                 case ANDROID_FAILURE:
-                    Toast.makeText(getApplicationContext(), getString(R.string.please_check_the_network_and_try_again), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getActivity(), getString(R.string.please_check_the_network_and_try_again), Toast.LENGTH_SHORT).show();
                     break;
                 case SERVER_FAILURE:
-                    Toast.makeText(getApplicationContext(), getString(R.string.server_is_busy_please_try_again_later), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getActivity(), getString(R.string.server_is_busy_please_try_again_later), Toast.LENGTH_SHORT).show();
                     break;
             }
 
             // Enable screen rotation
-            setRequestedOrientation(screenOrientation);
+            getActivity().setRequestedOrientation(screenOrientation);
         }
 
         // HTTP PUT change to the server
@@ -545,7 +472,7 @@ public class DetailActivity extends GoogleApiActivity
                 urlConnection = (HttpsURLConnection) url.openConnection();
 
                 // Set authentication instance ID
-                urlConnection.setRequestProperty(MyConstants.HTTP_HEADER_INSTANCE_ID, InstanceID.getInstance(getApplicationContext()).getId());
+                urlConnection.setRequestProperty(MyConstants.HTTP_HEADER_INSTANCE_ID, InstanceID.getInstance(getActivity()).getId());
                 // Set content type
                 urlConnection.setRequestProperty("Content-Type", "application/json");
 
@@ -630,23 +557,23 @@ public class DetailActivity extends GoogleApiActivity
     private void sendRefreshBroadcast() {
         // Notify UI to refresh
         Intent refreshIntent = new Intent(MyConstants.REFRESH);
-        LocalBroadcastManager.getInstance(this).sendBroadcast(refreshIntent);
+        LocalBroadcastManager.getInstance(getActivity()).sendBroadcast(refreshIntent);
     }
 
     // Make a phone call to the owner or the member
     private void callOthersPhone() {
         String phoneNumber;
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
         String userId = sharedPreferences.getString(MyConstants.USER_ID, "");
         if (userId.equals("")) {
             Log.e(LOG_TAG, "User ID is empty. Maybe I'm not registered. Restart the APP.");
-            Toast.makeText(this, R.string.app_is_not_registered_please_check_internet_and_retry_later, Toast.LENGTH_SHORT).show();
+            Toast.makeText(getActivity(), R.string.app_is_not_registered_please_check_internet_and_retry_later, Toast.LENGTH_SHORT).show();
             return;
         }
 
         if (mItem.getMembers().length < 2) {
             Log.w(LOG_TAG, "Item member " + mItem.getMembers().length + " < 2 means it's out of date. Please refresh.");
-            Toast.makeText(this, R.string.data_is_out_of_date_please_refresh, Toast.LENGTH_LONG).show();
+            Toast.makeText(getActivity(), R.string.data_is_out_of_date_please_refresh, Toast.LENGTH_LONG).show();
             return;
         }
         if (mItem.getMembers()[0].getUserkey().equals(userId)) {
@@ -660,27 +587,27 @@ public class DetailActivity extends GoogleApiActivity
         // Open Phone APP
         Intent intent = new Intent(Intent.ACTION_DIAL);
         intent.setData(Uri.parse("tel:" + phoneNumber));
-        if (intent.resolveActivity(getPackageManager()) == null) {
+        if (intent.resolveActivity(getActivity().getPackageManager()) == null) {
             Log.d(LOG_TAG, "Can't find phone APP");
-            Toast.makeText(this, R.string.phone_app_is_not_found, Toast.LENGTH_LONG).show();
+            Toast.makeText(getActivity(), R.string.phone_app_is_not_found, Toast.LENGTH_LONG).show();
             return;
         }
-        Toast.makeText(this, R.string.call_your_partner, Toast.LENGTH_LONG).show();
+        Toast.makeText(getActivity(), R.string.call_your_partner, Toast.LENGTH_LONG).show();
         startActivity(intent);
     }
 
     // Refresh the item information from the server
     private void initiateRefresh() {
         // Check Google Instance ID registration
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
         boolean isTokenSentToServer = sharedPreferences.getBoolean(MyConstants.SENT_TOKEN_TO_SERVER, false);
         if (!isTokenSentToServer) {
-            Toast.makeText(this, getString(R.string.app_is_not_registered_please_check_internet_and_retry_later), Toast.LENGTH_LONG).show();
+            Toast.makeText(getActivity(), getString(R.string.app_is_not_registered_please_check_internet_and_retry_later), Toast.LENGTH_LONG).show();
             return;
         }
 
         // Check network connection ability and then access Google Cloud Storage
-        ConnectivityManager connMgr = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager connMgr = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
         if (networkInfo != null && networkInfo.isConnected()) {
             // We make sure that the SwipeRefreshLayout is displaying it's refreshing indicator
@@ -689,7 +616,7 @@ public class DetailActivity extends GoogleApiActivity
             mGetItemTask = new GetItemTask();
             mGetItemTask.execute();
         } else {
-            Toast.makeText(this, getString(R.string.no_network_connection_available), Toast.LENGTH_SHORT).show();
+            Toast.makeText(getActivity(), getString(R.string.no_network_connection_available), Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -703,8 +630,8 @@ public class DetailActivity extends GoogleApiActivity
         @Override
         protected void onPreExecute() {
             // Disable screen rotation
-            screenOrientation = getRequestedOrientation();
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
+            screenOrientation = getActivity().getRequestedOrientation();
+            getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
         }
 
         @Override
@@ -725,17 +652,17 @@ public class DetailActivity extends GoogleApiActivity
                     showItemCloseDialog();
                     break;
                 case ANDROID_FAILURE:
-                    Toast.makeText(getApplicationContext(), getString(R.string.please_check_the_network_and_try_again), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getActivity(), getString(R.string.please_check_the_network_and_try_again), Toast.LENGTH_SHORT).show();
                     break;
                 case SERVER_FAILURE:
-                    Toast.makeText(getApplicationContext(), getString(R.string.server_is_busy_please_try_again_later), Toast.LENGTH_SHORT).show();
+                    Toast.makeText(getActivity(), getString(R.string.server_is_busy_please_try_again_later), Toast.LENGTH_SHORT).show();
                     break;
             }
             // Stop the refreshing indicator
             mSwipeRefreshLayout.setRefreshing(false);
 
             // Enable screen rotation
-            setRequestedOrientation(screenOrientation);
+            getActivity().setRequestedOrientation(screenOrientation);
         }
 
         // HTTP GET item from the server
@@ -751,7 +678,7 @@ public class DetailActivity extends GoogleApiActivity
                 urlConnection = (HttpsURLConnection) url.openConnection();
 
                 // Set authentication instance ID
-                urlConnection.setRequestProperty(MyConstants.HTTP_HEADER_INSTANCE_ID, InstanceID.getInstance(getApplicationContext()).getId());
+                urlConnection.setRequestProperty(MyConstants.HTTP_HEADER_INSTANCE_ID, InstanceID.getInstance(getActivity()).getId());
                 // Set content type
                 urlConnection.setRequestProperty("Content-Type", "application/json");
 

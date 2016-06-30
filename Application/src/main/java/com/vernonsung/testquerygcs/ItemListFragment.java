@@ -52,6 +52,7 @@ import com.google.android.gms.iid.InstanceID;
 import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
+import com.melnykov.fab.FloatingActionButton;
 import com.squareup.picasso.Picasso;
 
 import java.io.IOException;
@@ -62,17 +63,20 @@ import java.net.URL;
 
 import javax.net.ssl.HttpsURLConnection;
 
-/**
- * A basic sample that shows how to use {@link android.support.v4.widget.SwipeRefreshLayout} to add
- * the 'swipe-to-refresh' gesture to a layout. In this sample, SwipeRefreshLayout contains a
- * scrollable {@link android.widget.ListView} as its only child.
- *
- * <p>To provide an accessible way to trigger the refresh, this app also provides a refresh
- * action item.
- *
- * <p>In this sample app, the refresh updates the ListView with a random set of new items.
- */
-public class SwipeRefreshLayoutBasicFragment extends Fragment {
+public class ItemListFragment extends Fragment {
+    /**
+     * To create a new item
+     */
+    public interface OnCreateItemListener {
+        void onCreateItem();
+    }
+
+    /**
+     * To show item detail
+     */
+    public interface OnShowItemDetailListener {
+        void onShowItemDetail(Item2 item);
+    }
 
     private static final String LOG_TAG = "TestGood";
 
@@ -88,13 +92,15 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
     // Threads
     private QueryItemTask mQueryItemTask;
 
-    /**
-     * The {@link android.support.v4.widget.SwipeRefreshLayout} that detects swipe gestures and
-     * triggers callbacks in the app.
-     */
+    // Listener
+    private OnCreateItemListener onCreateItemListener;
+    private OnShowItemDetailListener onShowItemDetailListener;
+
+    // UI
     private SwipeRefreshLayout mSwipeRefreshLayout;
     private GridView mGridView;
     private GridAdapter mAdapter;
+    private FloatingActionButton fab;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
@@ -109,72 +115,55 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
         items = null;
         flagRefreshNeeded = true;
         mQueryItemTask = null;
+        mAdapter = new GridAdapter();
     }
 
-    // BEGIN_INCLUDE (inflate_view)
     @Override
     public View onCreateView(LayoutInflater inflater, ViewGroup container,
             Bundle savedInstanceState) {
-        View view = inflater.inflate(R.layout.fragment_sample, container, false);
+        View view = inflater.inflate(R.layout.fragment_item_list, container, false);
 
-        // Retrieve the SwipeRefreshLayout and ListView instances
-        mSwipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.swiperefresh);
+        // Retrieve UI instances
+        mSwipeRefreshLayout = (SwipeRefreshLayout) view.findViewById(R.id.swipeRefreshItem);
+        mGridView = (GridView) view.findViewById(R.id.gridViewItems);
+        fab = (FloatingActionButton) view.findViewById(R.id.fab);
 
-        // BEGIN_INCLUDE (change_colors)
-        // Set the color scheme of the SwipeRefreshLayout by providing 4 color resource ids
+        // Setup UI
+        /**
+         * Set the color scheme of the SwipeRefreshLayout by providing 4 color resource ids
+          */
         mSwipeRefreshLayout.setColorSchemeResources(
                 R.color.swipe_color_1, R.color.swipe_color_2,
                 R.color.swipe_color_3, R.color.swipe_color_4);
-        // END_INCLUDE (change_colors)
-
-        // Setup the GridView and set the adapter
-        mGridView = (GridView) view.findViewById(R.id.grid);
+        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
+            @Override
+            public void onRefresh() {
+                initiateRefresh();
+            }
+        });
+        mGridView.setAdapter(mAdapter);
         mGridView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
                 showDetail(adapterView, view, i, l);
             }
         });
+        fab.attachToListView(mGridView);
+        fab.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View view) {
+                createItem();
+            }
+        });
 
         return view;
     }
-    // END_INCLUDE (inflate_view)
-
-    // BEGIN_INCLUDE (setup_views)
-    @Override
-    public void onViewCreated(View view, Bundle savedInstanceState) {
-        super.onViewCreated(view, savedInstanceState);
-
-        mAdapter = new GridAdapter();
-        mGridView.setAdapter(mAdapter);
-
-        // BEGIN_INCLUDE (setup_refreshlistener)
-        /**
-         * Implement {@link SwipeRefreshLayout.OnRefreshListener}. When users do the "swipe to
-         * refresh" gesture, SwipeRefreshLayout invokes
-         * {@link SwipeRefreshLayout.OnRefreshListener#onRefresh onRefresh()}. In
-         * {@link SwipeRefreshLayout.OnRefreshListener#onRefresh onRefresh()}, call a method that
-         * refreshes the content. Call the same method in response to the Refresh action from the
-         * action bar.
-         */
-        mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
-            @Override
-            public void onRefresh() {
-                Log.i(LOG_TAG, "onRefresh called from SwipeRefreshLayout");
-
-                initiateRefresh();
-            }
-        });
-        // END_INCLUDE (setup_refreshlistener)
-    }
-    // END_INCLUDE (setup_views)
 
     @Override
     public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
         inflater.inflate(R.menu.main_menu, menu);
     }
 
-    // BEGIN_INCLUDE (setup_refresh_menu_listener)
     /**
      * Respond to the user's selection of the Refresh action item. Start the SwipeRefreshLayout
      * progress bar, then initiate the background task that refreshes the content.
@@ -198,7 +187,51 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
 
         return super.onOptionsItemSelected(item);
     }
-    // END_INCLUDE (setup_refresh_menu_listener)
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        if (context instanceof OnCreateItemListener) {
+            onCreateItemListener = (OnCreateItemListener) context;
+        } else {
+            throw new RuntimeException(context.toString()
+                    + " must implement OnCreateItemListener");
+        }
+        if (context instanceof OnShowItemDetailListener) {
+            onShowItemDetailListener = (OnShowItemDetailListener) context;
+        } else {
+            throw new RuntimeException(context.toString()
+                    + " must implement OnShowItemDetailListener");
+        }
+    }
+
+    /**
+     * Deprecated in API level 23. Keep it here for backward compatibility
+     */
+    @Deprecated
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        if (activity instanceof OnCreateItemListener) {
+            onCreateItemListener = (OnCreateItemListener) activity;
+        } else {
+            throw new RuntimeException(activity.toString()
+                    + " must implement OnCreateItemListener");
+        }
+        if (activity instanceof OnShowItemDetailListener) {
+            onShowItemDetailListener = (OnShowItemDetailListener) activity;
+        } else {
+            throw new RuntimeException(activity.toString()
+                    + " must implement OnShowItemDetailListener");
+        }
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        onCreateItemListener = null;
+        onShowItemDetailListener = null;
+    }
 
     @Override
     public void onStart() {
@@ -207,7 +240,7 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
 
     /**
      * Called when an item in the {@link android.widget.GridView} is clicked. Here will launch the
-     * {@link DetailActivity}, using the Scene Transition animation functionality.
+     * {@link ItemDetailFragment}, using the Scene Transition animation functionality.
      */
     public void showDetail(AdapterView<?> adapterView, View view, int position, long id) {
         // Get the specified item
@@ -215,38 +248,8 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
             Log.e(LOG_TAG, "User click position " + position + " is out of item number " + items.length);
             return;
         }
-        Item2 item = items[position];
-
-        // Transform item to JSON
-        String itemJson = new Gson().toJson(item);
-
-        // Construct an Intent as normal
-        Intent intent = new Intent(getActivity(), DetailActivity.class);
-        intent.putExtra(DetailActivity.EXTRA_PARAM_ITEM, itemJson);
-        intent.putExtra(DetailActivity.EXTRA_PARAM_ID, item.getId());
-
-            // BEGIN_INCLUDE(start_activity)
-        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.LOLLIPOP) {
-            startActivity(intent);
-        } else {
-            /**
-             * Now create an {@link android.app.ActivityOptions} instance using the
-             * {@link ActivityOptionsCompat#makeSceneTransitionAnimation(Activity, Pair[])} factory
-             * method.
-             */
-            ActivityOptionsCompat activityOptions = ActivityOptionsCompat.makeSceneTransitionAnimation(
-                    getActivity(),
-
-                    // Now we provide a list of Pair items which contain the view we can transitioning
-                    // from, and the name of the view it is transitioning to, in the launched activity
-                    new Pair<View, String>(view.findViewById(R.id.imageview_item),
-                            DetailActivity.VIEW_NAME_HEADER_IMAGE),
-                    new Pair<View, String>(view.findViewById(R.id.textview_name),
-                            DetailActivity.VIEW_NAME_HEADER_TITLE));
-
-            // Now we can start the Activity, providing the activity options as a bundle
-            ActivityCompat.startActivity(getActivity(), intent, activityOptions.toBundle());
-            // END_INCLUDE(start_activity)
+        if (onShowItemDetailListener != null) {
+            onShowItemDetailListener.onShowItemDetail(items[position]);
         }
     }
 
@@ -500,7 +503,8 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
         }
     }
 
-    public GridView getmGridView() {
-        return mGridView;
+    private void createItem() {
+        // Call the activity to change fragment
+        onCreateItemListener.onCreateItem();
     }
 }

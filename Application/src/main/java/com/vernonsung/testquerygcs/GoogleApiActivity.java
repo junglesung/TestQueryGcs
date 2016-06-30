@@ -20,13 +20,13 @@ public class GoogleApiActivity extends GoogleCloudMessagingActivity
         implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
 
     public interface OnGooglePlayServiceConnectedListener {
-        void onGooglePlayServiceConnected(GoogleApiClient mGoogleApiClient);
+        void onGooglePlayServiceConnected();
     }
 
     // Called immediately after Google play service is connected
     private OnGooglePlayServiceConnectedListener mOnGooglePlayServiceConnectedListener = null;
     // Google API
-    private GoogleApiClient mGoogleApiClient;
+    protected GoogleApiClient mGoogleApiClient;
     // Unique tag for the error dialog fragment
     private static final String DIALOG_ERROR = "dialog_error";
     // Bool to track whether the app is already resolving an error
@@ -81,7 +81,7 @@ public class GoogleApiActivity extends GoogleCloudMessagingActivity
         // Connected to Google Play services!
         // The good stuff goes here.
         if (mOnGooglePlayServiceConnectedListener != null) {
-            mOnGooglePlayServiceConnectedListener.onGooglePlayServiceConnected(mGoogleApiClient);
+            mOnGooglePlayServiceConnectedListener.onGooglePlayServiceConnected();
         }
     }
 

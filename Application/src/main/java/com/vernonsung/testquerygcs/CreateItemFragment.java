@@ -1,7 +1,9 @@
 package com.vernonsung.testquerygcs;
 
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DialogFragment;
+import android.app.Fragment;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
@@ -20,20 +22,20 @@ import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.provider.OpenableColumns;
+import android.support.annotation.Nullable;
 import android.support.v4.app.NavUtils;
 import android.util.Log;
-import android.view.Menu;
+import android.view.LayoutInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.common.api.GoogleApiClient;
 import com.google.android.gms.iid.InstanceID;
-import com.google.android.gms.location.LocationServices;
 import com.squareup.picasso.Picasso;
 
 import java.io.BufferedInputStream;
@@ -50,8 +52,15 @@ import java.util.List;
 
 import javax.net.ssl.HttpsURLConnection;
 
-public class CreateItemActivity extends GoogleApiActivity
+public class CreateItemFragment extends Fragment
                              implements PhoneNumberDialogFragment.PhoneNumberDialogListener {
+    /**
+     * To fetch latest location
+     */
+    public interface OnFetchLocationListener {
+        Location onFetchLocation();
+    }
+
     enum CreateItemState {
         INITIAL, UPLOADING_IMAGE, READY_TO_SEND, SENDING, FINISHED
     }
@@ -82,6 +91,9 @@ public class CreateItemActivity extends GoogleApiActivity
     private UploadImageTask mUploadImageTask;
     private CreateItemTask mCreateItemTask;
 
+    // Listener
+    private OnFetchLocationListener onFetchLocationListener;
+
     // UI
     private ImageView mImageView;
     private ImageButton mButtonCamera;
@@ -91,14 +103,19 @@ public class CreateItemActivity extends GoogleApiActivity
     private TextView mTextViewInfo;
 
     @Override
-    protected void onCreate(Bundle savedInstanceState) {
+    public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_create_item);
+    }
+
+    @Nullable
+    @Override
+    public View onCreateView(LayoutInflater inflater, ViewGroup container, Bundle savedInstanceState) {
+        View view = inflater.inflate(R.layout.fragment_create_item, container, false);
 
         // UI
-        mImageView = (ImageView) findViewById(R.id.imageview_create_item);
+        mImageView = (ImageView) view.findViewById(R.id.imageview_create_item);
 
-        mButtonCamera = (ImageButton) findViewById(R.id.imagebutton_camera);
+        mButtonCamera = (ImageButton) view.findViewById(R.id.imagebutton_camera);
         mButtonCamera.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -106,7 +123,7 @@ public class CreateItemActivity extends GoogleApiActivity
             }
         });
 
-        mButtonGallery = (ImageButton) findViewById(R.id.imagebutton_gallery);
+        mButtonGallery = (ImageButton) view.findViewById(R.id.imagebutton_gallery);
         mButtonGallery.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -114,7 +131,7 @@ public class CreateItemActivity extends GoogleApiActivity
             }
         });
 
-        mButtonMore = (Button) findViewById(R.id.button_create_item_more);
+        mButtonMore = (Button) view.findViewById(R.id.button_create_item_more);
         mButtonMore.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -122,7 +139,7 @@ public class CreateItemActivity extends GoogleApiActivity
             }
         });
 
-        mButtonSend = (Button) findViewById(R.id.button_create_item_send);
+        mButtonSend = (Button) view.findViewById(R.id.button_create_item_send);
         mButtonSend.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -130,7 +147,7 @@ public class CreateItemActivity extends GoogleApiActivity
             }
         });
 
-        mTextViewInfo = (TextView) findViewById(R.id.textview_information);
+        mTextViewInfo = (TextView) view.findViewById(R.id.textview_information);
 
         // Restore or initial
         mStorageDir = new File(Environment.getExternalStoragePublicDirectory(
@@ -138,7 +155,7 @@ public class CreateItemActivity extends GoogleApiActivity
         if (savedInstanceState != null) {
             mCurrentPhotoUri = savedInstanceState.getParcelable(MyConstants.CREATEITEMACTIVITY_MCURRENTPHOTOURI);
             if (mCurrentPhotoUri != null) {
-                Picasso.with(this).load(mCurrentPhotoUri).into(mImageView);
+                Picasso.with(getActivity()).load(mCurrentPhotoUri).into(mImageView);
             }
             mGcsPhotoUrl = savedInstanceState.getString(MyConstants.CREATEITEMACTIVITY_MGCSPHOTOURL);
             mPhoneNumber = savedInstanceState.getString(MyConstants.CREATEITEMACTIVITY_MPHONENUMBER);
@@ -151,6 +168,40 @@ public class CreateItemActivity extends GoogleApiActivity
         } else {
             changeState(CreateItemState.INITIAL);
         }
+
+        return view;
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        if (context instanceof OnFetchLocationListener) {
+            onFetchLocationListener = (OnFetchLocationListener) context;
+        } else {
+            throw new RuntimeException(context.toString()
+                    + " must implement OnFetchLocationListener");
+        }
+    }
+
+    /**
+     * Deprecated in API level 23. Keep it here for backward compatibility
+     */
+    @Deprecated
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        if (activity instanceof OnFetchLocationListener) {
+            onFetchLocationListener = (OnFetchLocationListener) activity;
+        } else {
+            throw new RuntimeException(activity.toString()
+                    + " must implement OnFetchLocationListener");
+        }
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        onFetchLocationListener = null;
     }
 
     @Override
@@ -169,7 +220,7 @@ public class CreateItemActivity extends GoogleApiActivity
     }
 
     @Override
-    protected void onSaveInstanceState(Bundle outState) {
+    public void onSaveInstanceState(Bundle outState) {
         outState.putParcelable(MyConstants.CREATEITEMACTIVITY_MCURRENTPHOTOURI, mCurrentPhotoUri);
         outState.putString(MyConstants.CREATEITEMACTIVITY_MGCSPHOTOURL, mGcsPhotoUrl);
         outState.putString(MyConstants.CREATEITEMACTIVITY_MPHONENUMBER, mPhoneNumber);
@@ -178,7 +229,7 @@ public class CreateItemActivity extends GoogleApiActivity
     }
 
     @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+    public void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
 
         // The ACTION_GET_CONTENT intent was sent with the request code
@@ -191,22 +242,20 @@ public class CreateItemActivity extends GoogleApiActivity
             case REQUEST_IMAGE_BROWSE:
                 onActivityResultImageBrowse(resultCode, data);
                 break;
-            default:
-                //
         }
     }
 
     private void onActivityResultImageCapture(int resultCode, Intent data) {
-        if (resultCode == RESULT_OK) {
+        if (resultCode == Activity.RESULT_OK) {
             // Display image
-            Picasso.with(this).load(mCurrentPhotoUri).into(mImageView);
+            Picasso.with(getActivity()).load(mCurrentPhotoUri).into(mImageView);
             galleryAddPic();
             uploadImage();
         }
     }
 
     private void onActivityResultImageBrowse(int resultCode, Intent data) {
-        if (resultCode == RESULT_OK) {
+        if (resultCode == Activity.RESULT_OK) {
             // The document selected by the user won't be returned in the intent.
             // Instead, a URI to that document will be contained in the return intent
             // provided to this method as a parameter.
@@ -214,7 +263,7 @@ public class CreateItemActivity extends GoogleApiActivity
             if (data != null) {
                 mCurrentPhotoUri = data.getData();
                 Log.i(LOG_TAG, "Chosen image URI " + mCurrentPhotoUri.toString());
-                Picasso.with(this).load(mCurrentPhotoUri).into(mImageView);
+                Picasso.with(getActivity()).load(mCurrentPhotoUri).into(mImageView);
                 uploadImage();
             }
         }
@@ -222,7 +271,7 @@ public class CreateItemActivity extends GoogleApiActivity
 
     private void uploadImage() {
         // Check network connection ability and then access Google Cloud Storage
-        ConnectivityManager connMgr = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager connMgr = (ConnectivityManager)getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
         if (networkInfo != null && networkInfo.isConnected()) {
             // Change state
@@ -231,7 +280,7 @@ public class CreateItemActivity extends GoogleApiActivity
             mUploadImageTask = new UploadImageTask();
             mUploadImageTask.execute(mCurrentPhotoUri);
         } else {
-            Toast.makeText(this, getString(R.string.no_network_connection_available), Toast.LENGTH_SHORT).show();
+            Toast.makeText(getActivity(), getString(R.string.no_network_connection_available), Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -248,8 +297,8 @@ public class CreateItemActivity extends GoogleApiActivity
         @Override
         protected void onPreExecute() {
             // Disable screen rotation
-            screenOrientation = getRequestedOrientation();
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
+            screenOrientation = getActivity().getRequestedOrientation();
+            getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
         }
 
         // Return the URL in Google Cloud Storage
@@ -302,7 +351,7 @@ public class CreateItemActivity extends GoogleApiActivity
             mGcsPhotoUrl = url;
             mGcsThumbnailUrl = thumbnailUrl;
             if (url == null) {
-                Toast.makeText(getApplicationContext(), R.string.server_error_please_choose_a_jpeg_photo_and_try_again, Toast.LENGTH_LONG).show();
+                Toast.makeText(getActivity(), R.string.server_error_please_choose_a_jpeg_photo_and_try_again, Toast.LENGTH_LONG).show();
                 changeState(CreateItemState.INITIAL);
             } else {
                 // Upload image successfully
@@ -311,7 +360,7 @@ public class CreateItemActivity extends GoogleApiActivity
             }
 
             // Enable screen rotation
-            setRequestedOrientation(screenOrientation);
+            getActivity().setRequestedOrientation(screenOrientation);
         }
 
         // Send an image to Google Cloud Storage
@@ -325,7 +374,7 @@ public class CreateItemActivity extends GoogleApiActivity
             InputStream in = null;
 
             // Set authentication instance ID
-            urlConnection.setRequestProperty(MyConstants.HTTP_HEADER_INSTANCE_ID, InstanceID.getInstance(getApplicationContext()).getId());
+            urlConnection.setRequestProperty(MyConstants.HTTP_HEADER_INSTANCE_ID, InstanceID.getInstance(getActivity()).getId());
             // Set content type
             urlConnection.setRequestProperty("Content-Type", "image/jpeg");
 
@@ -345,7 +394,7 @@ public class CreateItemActivity extends GoogleApiActivity
                 // Get the OutputStream of HTTP client
                 out = new BufferedOutputStream(urlConnection.getOutputStream());
                 // Get the InputStream of the file
-                InputStream inputstream = getContentResolver().openInputStream(uri);
+                InputStream inputstream = getActivity().getContentResolver().openInputStream(uri);
                 if (inputstream == null) {
                     Log.d(LOG_TAG, "Can't open image file");
                     return null;
@@ -418,7 +467,7 @@ public class CreateItemActivity extends GoogleApiActivity
         // The query, since it only applies to a single document, will only return
         // one row. There's no need to filter, sort, or select fields, since we want
         // all fields for one document.
-        Cursor cursor = this.getContentResolver().query(uri, null, null, null, null, null);
+        Cursor cursor = getActivity().getContentResolver().query(uri, null, null, null, null, null);
 
         try {
             // moveToFirst() returns false if the cursor has 0 rows.  Very handy for
@@ -451,15 +500,15 @@ public class CreateItemActivity extends GoogleApiActivity
         Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
 
         // Ensure that there's a camera activity to handle the intent
-        if (takePictureIntent.resolveActivity(getPackageManager()) == null) {
+        if (takePictureIntent.resolveActivity(getActivity().getPackageManager()) == null) {
             Log.e(LOG_TAG, getString(R.string.no_camera_app));
-            Toast.makeText(this, getString(R.string.no_camera_app), Toast.LENGTH_SHORT).show();
+            Toast.makeText(getActivity(), getString(R.string.no_camera_app), Toast.LENGTH_SHORT).show();
             return;
         }
         // Ensure external storage is writable
         if (!isExternalStorageWritable()) {
             Log.e(LOG_TAG, getString(R.string.external_storage_is_not_writable));
-            Toast.makeText(this, getString(R.string.external_storage_is_not_writable), Toast.LENGTH_SHORT).show();
+            Toast.makeText(getActivity(), getString(R.string.external_storage_is_not_writable), Toast.LENGTH_SHORT).show();
             return;
         }
         // Create the File where the photo should go
@@ -516,7 +565,7 @@ public class CreateItemActivity extends GoogleApiActivity
             File f = new File(mStorageDir, s);
             f.delete();
             try {
-                getContentResolver().delete(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
+                getActivity().getContentResolver().delete(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,
                         MediaStore.Images.Media.DATA
                                 + "='"
                                 + f.getPath()
@@ -530,7 +579,7 @@ public class CreateItemActivity extends GoogleApiActivity
     private void galleryAddPic() {
         Intent mediaScanIntent = new Intent(Intent.ACTION_MEDIA_SCANNER_SCAN_FILE);
         mediaScanIntent.setData(mCurrentPhotoUri);
-        this.sendBroadcast(mediaScanIntent);
+        getActivity().sendBroadcast(mediaScanIntent);
     }
 
     private void chooseAnImage() {
@@ -548,8 +597,8 @@ public class CreateItemActivity extends GoogleApiActivity
 
         //第一個問題是Android系統找不到符合指定MIME類型的內容選取器，程式將會因為找不到可執行的Activity而直接閃退，這個問題甚至可能會沒辦法直接用try-catch來解決。第二個可能會遇到的問題是，當Android系統找到兩種以上可用的App或是Activity支援指定的MIME類型時，可能會自動使用其中一種，此時也許就會選到無法正常使用的App或是Activity，連帶使我們的App永遠無法正常使用。
         //要解決第一個找不到Activity的問題，可以事先使用PackageManager查詢可以使用該MIME類型的Activity列表來解決。而要解決第二個可用App或是Activity有兩個以上的問題的話，可以使用系統內建的Intent Chooser，跳出選單讓使用者選擇要使用哪個。
-        PackageManager packageManager = this.getPackageManager();
-        List<ResolveInfo> list = packageManager.queryIntentActivities(intent, PackageManager.GET_ACTIVITIES);
+        PackageManager packageManager = getActivity().getPackageManager();
+        List<ResolveInfo> list = packageManager.queryIntentActivities(intent, PackageManager.MATCH_DEFAULT_ONLY);
         if (list.size() > 0) {
             // 如果有可用的Activity
             // 使用Intent Chooser
@@ -557,7 +606,7 @@ public class CreateItemActivity extends GoogleApiActivity
             startActivityForResult(destIntent, REQUEST_IMAGE_BROWSE);
         } else {
             // 沒有可用的Activity
-            Toast.makeText(this, getString(R.string.no_app_to_choose_an_image), Toast.LENGTH_SHORT).show();
+            Toast.makeText(getActivity(), getString(R.string.no_app_to_choose_an_image), Toast.LENGTH_SHORT).show();
         }
     }
 
@@ -582,7 +631,7 @@ public class CreateItemActivity extends GoogleApiActivity
         mPhoneNumber = mPhoneNumberDialogFragment.getPhoneNumber();
         if (mPhoneNumber == null || mPhoneNumber.isEmpty()) {
             Log.d(LOG_TAG, "Phone number is empty");
-            Toast.makeText(this, getString(R.string.wrong_phone_number_format_please_enter_again), Toast.LENGTH_LONG).show();
+            Toast.makeText(getActivity(), getString(R.string.wrong_phone_number_format_please_enter_again), Toast.LENGTH_LONG).show();
             return;
         }
         Log.d(LOG_TAG, "Got phone number " + mPhoneNumber);
@@ -597,34 +646,18 @@ public class CreateItemActivity extends GoogleApiActivity
     }
 
     private Location fetchLocation() {
-        GoogleApiClient mGoogleApiClient = getGoogleApiClient();
-        // Make sure Google play service is connected in order to get location from it
-        if (!mGoogleApiClient.isConnected()) {
-            Log.d(LOG_TAG, getString(R.string.get_location_failed_because_google_play_service_is_not_installed));
-            Toast.makeText(this, getString(R.string.get_location_failed_because_google_play_service_is_not_installed), Toast.LENGTH_LONG).show();
-            return null;
+        if (onFetchLocationListener != null) {
+            return onFetchLocationListener.onFetchLocation();
         }
-
-        // Get location from Google play service
-        Location mLastLocation = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-        if (mLastLocation == null) {
-            Log.d(LOG_TAG, getString(R.string.get_location_failed_because_gps_is_off));
-            Toast.makeText(this, getString(R.string.get_location_failed_because_gps_is_off), Toast.LENGTH_LONG).show();
-            return null;
-        }
-
-        // Vernon debug
-        Log.d(LOG_TAG, mLastLocation.toString());
-
-        return mLastLocation;
+        return null;
     }
 
     private void createItem() {
         // Check Google Instance ID registration
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
         boolean isTokenSentToServer = sharedPreferences.getBoolean(MyConstants.SENT_TOKEN_TO_SERVER, false);
         if (!isTokenSentToServer) {
-            Toast.makeText(this, getString(R.string.app_is_not_registered_please_check_internet_and_retry_later), Toast.LENGTH_LONG).show();
+            Toast.makeText(getActivity(), getString(R.string.app_is_not_registered_please_check_internet_and_retry_later), Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -636,10 +669,10 @@ public class CreateItemActivity extends GoogleApiActivity
         }
 
         // Check network connection ability and then access Google Cloud Storage
-        ConnectivityManager connMgr = (ConnectivityManager)getSystemService(Context.CONNECTIVITY_SERVICE);
+        ConnectivityManager connMgr = (ConnectivityManager)getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
         if (networkInfo == null || !networkInfo.isConnected()) {
-            Toast.makeText(this, getString(R.string.no_network_connection_available), Toast.LENGTH_LONG).show();
+            Toast.makeText(getActivity(), getString(R.string.no_network_connection_available), Toast.LENGTH_LONG).show();
             return;
         }
 
@@ -680,8 +713,8 @@ public class CreateItemActivity extends GoogleApiActivity
         @Override
         protected void onPreExecute() {
             // Disable screen rotation
-            screenOrientation = getRequestedOrientation();
-            setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
+            screenOrientation = getActivity().getRequestedOrientation();
+            getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
         }
 
         // Return the item URL generated by the server.
@@ -714,7 +747,7 @@ public class CreateItemActivity extends GoogleApiActivity
         @Override
         protected void onPostExecute(String itemUrl) {
             if (itemUrl == null) {
-                Toast.makeText(getApplicationContext(), R.string.create_failed_warning, Toast.LENGTH_LONG).show();
+                Toast.makeText(getActivity(), R.string.create_failed_warning, Toast.LENGTH_LONG).show();
                 changeState(CreateItemState.READY_TO_SEND);
             } else {
                 // Create item successfully
@@ -723,7 +756,7 @@ public class CreateItemActivity extends GoogleApiActivity
             }
 
             // Enable screen rotation
-            setRequestedOrientation(screenOrientation);
+            getActivity().setRequestedOrientation(screenOrientation);
         }
 
         // Send an item to Google App Engine
@@ -738,7 +771,7 @@ public class CreateItemActivity extends GoogleApiActivity
             String itemUrl = null;
 
             // Set authentication instance ID
-            urlConnection.setRequestProperty(MyConstants.HTTP_HEADER_INSTANCE_ID, InstanceID.getInstance(getApplicationContext()).getId());
+            urlConnection.setRequestProperty(MyConstants.HTTP_HEADER_INSTANCE_ID, InstanceID.getInstance(getActivity()).getId());
             // Set content type
             urlConnection.setRequestProperty("Content-Type", "application/json");
 
@@ -818,7 +851,7 @@ public class CreateItemActivity extends GoogleApiActivity
         switch (state) {
             case INITIAL:
                 // Set UI
-                Picasso.with(this).load("http://aliza-1148.appspot.com.storage.googleapis.com/ImageFrame.png").into(mImageView);
+                Picasso.with(getActivity()).load("http://aliza-1148.appspot.com.storage.googleapis.com/ImageFrame.png").into(mImageView);
                 mButtonCamera.setEnabled(true);
                 mButtonGallery.setEnabled(true);
                 mTextViewInfo.setText(R.string.select_or_take_a_photo);
@@ -874,12 +907,12 @@ public class CreateItemActivity extends GoogleApiActivity
     }
 
     private void navigateUp() {
-        NavUtils.navigateUpFromSameTask(this);
+        getActivity().getFragmentManager().popBackStack();
     }
 
     private void showFinishDialog() {
         // 1. Instantiate an AlertDialog.Builder with its constructor
-        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        AlertDialog.Builder builder = new AlertDialog.Builder(getActivity());
         // 2. Chain together various setter methods to set the dialog characteristics
         builder.setMessage(R.string.power_safe_warning)
                 .setTitle(R.string.create_item_successfully);

@@ -16,129 +16,143 @@
 
 package com.vernonsung.testquerygcs;
 
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.location.LocationServices;
-import com.melnykov.fab.FloatingActionButton;
-
-import android.app.FragmentTransaction;
-import android.content.Intent;
+import android.app.Fragment;
 import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.View;
-import android.widget.GridView;
 import android.widget.Toast;
+
+import com.google.android.gms.location.LocationServices;
 
 /**
  * Our main Activity in this sample. Displays a grid of items which an image and title. When the
- * user clicks on an item, {@link DetailActivity} is launched, using the Activity Scene Transitions
+ * user clicks on an item, {@link ItemDetailFragment} is launched, using the Activity Scene Transitions
  * framework to animatedly do so.
  */
-public class MainActivity extends GoogleApiActivity {
+public class MainActivity extends GoogleApiActivity
+                       implements ItemListFragment.OnCreateItemListener,
+                                  ItemListFragment.OnShowItemDetailListener,
+                                  CreateItemFragment.OnFetchLocationListener {
     private static final String LOG_TAG = "TestGood";
-
-    private SwipeRefreshLayoutBasicFragment fragment;
-    private FloatingActionButton fab;
-    private GridView mGridView;
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.grid);
+        setContentView(R.layout.main_activity);
 
-        // Set swipe to refresh fragment
+        // UI. Show ItemListFragment at the first start. Fragment manager will recreate it after screen orientation changes.
         if (savedInstanceState == null) {
-            FragmentTransaction transaction = getFragmentManager().beginTransaction();
-            fragment = new SwipeRefreshLayoutBasicFragment();
-            transaction.replace(R.id.sample_content_fragment, fragment);
-            transaction.commit();
-        } else {
-            fragment = (SwipeRefreshLayoutBasicFragment) getFragmentManager().findFragmentById(R.id.sample_content_fragment);
-            if (fragment == null) {
-                Log.e(LOG_TAG, "fragment = null");
-            }
+            getFragmentManager().beginTransaction().add(R.id.frameMain, new ItemListFragment()).commit();
         }
 
         setOnGooglePlayServiceConnectedListener(new OnGooglePlayServiceConnectedListener() {
             @Override
-            public void onGooglePlayServiceConnected(GoogleApiClient mGoogleApiClient) {
-                fetchLocation(mGoogleApiClient);
+            public void onGooglePlayServiceConnected() {
+                updateLocation();
             }
         });
     }
 
-//    @Override
-//    public boolean onCreateOptionsMenu(Menu menu) {
-//        // Inflate the menu; this adds items to the action bar if it is present.
-//        getMenuInflater().inflate(R.menu.main_menu, menu);
-//        return true;
-//    }
-
     @Override
     protected void onStart() {
         super.onStart();
-
-        // Set floating button attach to grid view at the first time
-        if (mGridView == null) {
-            // Make floating button show and hide according to GridView scroll
-            fab = (FloatingActionButton) findViewById(R.id.fab);
-            mGridView = fragment.getmGridView();
-            if (fab == null) {
-                Log.e(LOG_TAG, "fab is null");
-            } else {
-                Log.d(LOG_TAG, "fab is not null");
-            }
-            if (mGridView == null) {
-                Log.e(LOG_TAG, "mGridView is null");
-            } else {
-                Log.d(LOG_TAG, "mGridView is not null");
-            }
-            if (fab != null && mGridView != null) {
-                fab.attachToListView(mGridView);
-                fab.setOnClickListener(new View.OnClickListener() {
-                    @Override
-                    public void onClick(View view) {
-                        createItem();
-                    }
-                });
-            }
-        }
     }
 
     @Override
     protected void onGcmRegistrationComplete() {
         super.onGcmRegistrationComplete();
-        fragment.tryRefresh();
+        Fragment fragment = getFragmentManager().findFragmentById(R.id.frameMain);
+        if (fragment instanceof ItemListFragment) {
+            ItemListFragment itemListFragment = (ItemListFragment)fragment;
+            itemListFragment.tryRefresh();
+        } else if (fragment instanceof ItemDetailFragment) {
+            ItemDetailFragment itemDetailFragment = (ItemDetailFragment)fragment;
+            itemDetailFragment.tryRefresh();
+        }
     }
 
     @Override
     protected void onGcmRefresh() {
         super.onGcmRefresh();
-        fragment.forceRefresh();
+        Fragment fragment = getFragmentManager().findFragmentById(R.id.frameMain);
+        if (fragment instanceof ItemListFragment) {
+            ItemListFragment itemListFragment = (ItemListFragment)fragment;
+            itemListFragment.forceRefresh();
+        } else if (fragment instanceof ItemDetailFragment) {
+            ItemDetailFragment itemDetailFragment = (ItemDetailFragment)fragment;
+            itemDetailFragment.forceRefresh();
+        }
     }
 
-    private void createItem() {
-        //
-        Intent intent = new Intent(this, CreateItemActivity.class);
-        startActivity(intent);
+    /**
+     * When users press "Create button", show CreateItemFragment
+     */
+    @Override
+    public void onCreateItem() {
+        getFragmentManager().beginTransaction()
+                .replace(R.id.frameMain, new CreateItemFragment())
+                .addToBackStack(null)
+                .commit();
+    }
+
+    /**
+     * When users click on an item, show ItemDetailFragment
+     */
+    @Override
+    public void onShowItemDetail(Item2 item) {
+        if (item != null) {
+            getFragmentManager().beginTransaction()
+                    .replace(R.id.frameMain, ItemDetailFragment.newInstance(item))
+                    .addToBackStack(null)
+                    .commit();
+        }
+    }
+
+    /**
+     * When users are going send a new item to the server, fetch the latest location for the item.
+     * @return the latest location
+     */
+    @Override
+    public Location onFetchLocation() {
+        return fetchLocation();
     }
 
     // Get current location
-    private void fetchLocation(GoogleApiClient mGoogleApiClient) {
+    private Location fetchLocation() {
+        // Make sure Google play service is connected in order to get location from it
+        if (mGoogleApiClient == null || !mGoogleApiClient.isConnected()) {
+            Log.d(LOG_TAG, getString(R.string.get_location_failed_because_google_play_service_is_not_installed));
+            Toast.makeText(this, getString(R.string.get_location_failed_because_google_play_service_is_not_installed), Toast.LENGTH_LONG).show();
+            return null;
+        }
+        // Get location from Google play service
+        Location here = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
+        if (here == null) {
+            Log.d(LOG_TAG, getString(R.string.get_location_failed_because_gps_is_off));
+            Toast.makeText(this, getString(R.string.get_location_failed_because_gps_is_off), Toast.LENGTH_LONG).show();
+            return null;
+        }
+        // Vernon debug
+        Log.d(LOG_TAG, here.toString());
+        return here;
+    }
+
+    /**
+     * Update location according to different fragments
+     */
+    private void updateLocation() {
         // Current location
-        Location here = null;
-        if (mGoogleApiClient != null && mGoogleApiClient.isConnected()) {
-            here = LocationServices.FusedLocationApi.getLastLocation(mGoogleApiClient);
-            if (here == null) {
-                Log.d(LOG_TAG, getString(R.string.get_location_failed_because_gps_is_off));
-                Toast.makeText(this, getString(R.string.get_location_failed_because_gps_is_off), Toast.LENGTH_LONG).show();
-            }
-        } else {
-            Log.d(LOG_TAG, "Google play service is not connected");
-            Toast.makeText(this, "Google play service is not connected", Toast.LENGTH_LONG).show();
+        Location here = fetchLocation();
+        if (here == null) {
+            Log.d(LOG_TAG, "Wait for initializing Google play service to update location");
+            return;
         }
 
         // Notify fragments to update location
-        fragment.setHere(here);
+        Fragment fragment = getFragmentManager().findFragmentById(R.id.frameMain);
+        if (fragment instanceof ItemListFragment) {
+            ItemListFragment itemListFragment = (ItemListFragment)fragment;
+            itemListFragment.setHere(here);
+        }
     }
 }
