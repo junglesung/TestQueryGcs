@@ -18,20 +18,15 @@ package com.vernonsung.testquerygcs;
 
 import android.app.Activity;
 import android.content.Context;
-import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.ActivityInfo;
 import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
-import android.support.v4.app.ActivityCompat;
-import android.support.v4.app.ActivityOptionsCompat;
 import android.app.Fragment;
-import android.support.v4.util.Pair;
 import android.support.v4.widget.SwipeRefreshLayout;
 import android.util.Log;
 import android.view.LayoutInflater;
@@ -47,8 +42,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
-import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.iid.InstanceID;
 import com.google.gson.Gson;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonSyntaxException;
@@ -65,23 +58,16 @@ import javax.net.ssl.HttpsURLConnection;
 
 public class ItemListFragment extends Fragment {
     /**
-     * To create a new item
+     * The methods that the activity which contains the fragment should implement
      */
-    public interface OnCreateItemListener {
-        void onCreateItem();
-    }
-
-    /**
-     * To show item detail
-     */
-    public interface OnShowItemDetailListener {
-        void onShowItemDetail(Item2 item);
+    public interface ItemListFragmentListener {
+        void onCreateItem();                   // To create a new item
+        void onShowItemDetail(Item2 item);     // To show item detail
+        String onGetInstanceId();              // Get instance ID from the activity
     }
 
     private static final String LOG_TAG = "TestGood";
 
-    // To use Google play service such as Location API
-    GoogleApiClient mGoogleApiClient;
     // Current location
     Location here;
     // Item list
@@ -93,8 +79,7 @@ public class ItemListFragment extends Fragment {
     private QueryItemTask mQueryItemTask;
 
     // Listener
-    private OnCreateItemListener onCreateItemListener;
-    private OnShowItemDetailListener onShowItemDetailListener;
+    private ItemListFragmentListener itemListFragmentListener;
 
     // UI
     private SwipeRefreshLayout mSwipeRefreshLayout;
@@ -110,7 +95,6 @@ public class ItemListFragment extends Fragment {
 //        setHasOptionsMenu(true);
 
         // Initial variables
-        mGoogleApiClient = ((GoogleApiActivity)getActivity()).getGoogleApiClient();
         here = null;
         items = null;
         flagRefreshNeeded = true;
@@ -138,7 +122,7 @@ public class ItemListFragment extends Fragment {
         mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
-                initiateRefresh();
+                refresh();
             }
         });
         mGridView.setAdapter(mAdapter);
@@ -157,6 +141,12 @@ public class ItemListFragment extends Fragment {
         });
 
         return view;
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        refresh();
     }
 
     @Override
@@ -180,7 +170,7 @@ public class ItemListFragment extends Fragment {
                 }
 
                 // Start our refresh background task
-                initiateRefresh();
+                refresh();
 
                 return true;
         }
@@ -191,17 +181,11 @@ public class ItemListFragment extends Fragment {
     @Override
     public void onAttach(Context context) {
         super.onAttach(context);
-        if (context instanceof OnCreateItemListener) {
-            onCreateItemListener = (OnCreateItemListener) context;
+        if (context instanceof ItemListFragmentListener) {
+            itemListFragmentListener = (ItemListFragmentListener) context;
         } else {
             throw new RuntimeException(context.toString()
-                    + " must implement OnCreateItemListener");
-        }
-        if (context instanceof OnShowItemDetailListener) {
-            onShowItemDetailListener = (OnShowItemDetailListener) context;
-        } else {
-            throw new RuntimeException(context.toString()
-                    + " must implement OnShowItemDetailListener");
+                    + " must implement ItemListFragmentListener");
         }
     }
 
@@ -212,30 +196,18 @@ public class ItemListFragment extends Fragment {
     @Override
     public void onAttach(Activity activity) {
         super.onAttach(activity);
-        if (activity instanceof OnCreateItemListener) {
-            onCreateItemListener = (OnCreateItemListener) activity;
+        if (activity instanceof ItemListFragmentListener) {
+            itemListFragmentListener = (ItemListFragmentListener) activity;
         } else {
             throw new RuntimeException(activity.toString()
-                    + " must implement OnCreateItemListener");
-        }
-        if (activity instanceof OnShowItemDetailListener) {
-            onShowItemDetailListener = (OnShowItemDetailListener) activity;
-        } else {
-            throw new RuntimeException(activity.toString()
-                    + " must implement OnShowItemDetailListener");
+                    + " must implement ItemListFragmentListener");
         }
     }
 
     @Override
     public void onDetach() {
         super.onDetach();
-        onCreateItemListener = null;
-        onShowItemDetailListener = null;
-    }
-
-    @Override
-    public void onStart() {
-        super.onStart();
+        itemListFragmentListener = null;
     }
 
     /**
@@ -248,60 +220,49 @@ public class ItemListFragment extends Fragment {
             Log.e(LOG_TAG, "User click position " + position + " is out of item number " + items.length);
             return;
         }
-        if (onShowItemDetailListener != null) {
-            onShowItemDetailListener.onShowItemDetail(items[position]);
+        if (itemListFragmentListener != null) {
+            itemListFragmentListener.onShowItemDetail(items[position]);
         }
     }
 
-    // Refresh if needed
-    public void tryRefresh() {
-        if (!mSwipeRefreshLayout.isRefreshing() && flagRefreshNeeded) {
-            initiateRefresh();
-            flagRefreshNeeded = false;
-        }
-    }
-
-    // Force refreshing if it's not refreshing
-    public void forceRefresh() {
-        if (!mSwipeRefreshLayout.isRefreshing()) {
-            initiateRefresh();
-        }
-    }
-
-    // BEGIN_INCLUDE (initiate_refresh)
     /**
-     * By abstracting the refresh process to a single method, the app allows both the
-     * SwipeGestureLayout onRefresh() method and the Refresh action item to refresh the content.
+     * Reload items from the APP server
      */
-    private void initiateRefresh() {
-        // Check Google Instance ID registration
-        Activity activity = getActivity();
-        if (activity == null) {
+    public void refresh() {
+        // Make sure it's not refreshing
+        if (mSwipeRefreshLayout.isRefreshing()) {
             return;
         }
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(activity);
+        // Check Google Instance ID registration
+        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
         boolean isTokenSentToServer = sharedPreferences.getBoolean(MyConstants.SENT_TOKEN_TO_SERVER, false);
         if (!isTokenSentToServer) {
-            Toast.makeText(activity, getString(R.string.app_is_not_registered_please_check_internet_and_retry_later), Toast.LENGTH_LONG).show();
+            Toast.makeText(getActivity(), getString(R.string.app_is_not_registered_please_check_internet_and_retry_later), Toast.LENGTH_LONG).show();
             return;
         }
 
         // Check network connection ability and then access Google Cloud Storage
         ConnectivityManager connMgr = (ConnectivityManager)getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
-        if (networkInfo != null && networkInfo.isConnected()) {
-            // We make sure that the SwipeRefreshLayout is displaying it's refreshing indicator
-            mSwipeRefreshLayout.setRefreshing(true);
-            // Execute querying thread
-            mQueryItemTask = new QueryItemTask();
-            mQueryItemTask.execute();
-        } else {
+        if (networkInfo == null || !networkInfo.isConnected()) {
+            Log.d(LOG_TAG, getString(R.string.no_network_connection_available));
             Toast.makeText(getActivity(), getString(R.string.no_network_connection_available), Toast.LENGTH_SHORT).show();
+            return;
         }
+        // Get Google Instance ID
+        String instanceId = itemListFragmentListener.onGetInstanceId();
+        if (instanceId == null || instanceId.isEmpty()) {
+            Log.d(LOG_TAG, getString(R.string.app_is_not_registered_please_check_internet_and_retry_later));
+            Toast.makeText(getActivity(), getString(R.string.app_is_not_registered_please_check_internet_and_retry_later), Toast.LENGTH_LONG).show();
+            return;
+        }
+        // We make sure that the SwipeRefreshLayout is displaying it's refreshing indicator
+        mSwipeRefreshLayout.setRefreshing(true);
+        // Execute querying thread
+        mQueryItemTask = new QueryItemTask(instanceId);
+        mQueryItemTask.execute();
     }
-    // END_INCLUDE (initiate_refresh)
 
-    // BEGIN_INCLUDE (refresh_complete)
     /**
      * When the AsyncTask finishes, it calls onRefreshComplete(), which updates the data in the
      * ListAdapter and turns off the progress bar.
@@ -315,7 +276,6 @@ public class ItemListFragment extends Fragment {
         // Stop the refreshing indicator
         mSwipeRefreshLayout.setRefreshing(false);
     }
-    // END_INCLUDE (refresh_complete)
 
     public void setHere(Location here) {
         this.here = here;
@@ -336,6 +296,11 @@ public class ItemListFragment extends Fragment {
         static final String QUERY_ITEM_URL = "https://aliza-1148.appspot.com/api/0.1/items";
         // Screen orientation. Save and disable screen rotation in order to prevent screen rotation destroying the activity and the AsyncTask.
         private int screenOrientation;
+        private String instanceId;
+
+        public QueryItemTask(String instanceId) {
+            this.instanceId = instanceId;
+        }
 
         @Override
         protected void onPreExecute() {
@@ -383,7 +348,7 @@ public class ItemListFragment extends Fragment {
                 urlConnection = (HttpsURLConnection) url.openConnection();
 
                 // Set authentication instance ID
-                urlConnection.setRequestProperty(MyConstants.HTTP_HEADER_INSTANCE_ID, InstanceID.getInstance(getActivity()).getId());
+                urlConnection.setRequestProperty(MyConstants.HTTP_HEADER_INSTANCE_ID, instanceId);
                 // Set content type
                 urlConnection.setRequestProperty("Content-Type", "application/json");
 
@@ -505,6 +470,8 @@ public class ItemListFragment extends Fragment {
 
     private void createItem() {
         // Call the activity to change fragment
-        onCreateItemListener.onCreateItem();
+        if (itemListFragmentListener != null) {
+            itemListFragmentListener.onCreateItem();
+        }
     }
 }

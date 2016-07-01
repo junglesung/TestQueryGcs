@@ -22,6 +22,7 @@ import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.google.android.gms.iid.InstanceID;
 import com.google.android.gms.location.LocationServices;
 
 /**
@@ -30,8 +31,7 @@ import com.google.android.gms.location.LocationServices;
  * framework to animatedly do so.
  */
 public class MainActivity extends GoogleApiActivity
-                       implements ItemListFragment.OnCreateItemListener,
-                                  ItemListFragment.OnShowItemDetailListener,
+                       implements ItemListFragment.ItemListFragmentListener,
                                   CreateItemFragment.OnFetchLocationListener {
     private static final String LOG_TAG = "TestGood";
 
@@ -64,7 +64,7 @@ public class MainActivity extends GoogleApiActivity
         Fragment fragment = getFragmentManager().findFragmentById(R.id.frameMain);
         if (fragment instanceof ItemListFragment) {
             ItemListFragment itemListFragment = (ItemListFragment)fragment;
-            itemListFragment.tryRefresh();
+            itemListFragment.refresh();
         } else if (fragment instanceof ItemDetailFragment) {
             ItemDetailFragment itemDetailFragment = (ItemDetailFragment)fragment;
             itemDetailFragment.tryRefresh();
@@ -77,13 +77,14 @@ public class MainActivity extends GoogleApiActivity
         Fragment fragment = getFragmentManager().findFragmentById(R.id.frameMain);
         if (fragment instanceof ItemListFragment) {
             ItemListFragment itemListFragment = (ItemListFragment)fragment;
-            itemListFragment.forceRefresh();
+            itemListFragment.refresh();
         } else if (fragment instanceof ItemDetailFragment) {
             ItemDetailFragment itemDetailFragment = (ItemDetailFragment)fragment;
             itemDetailFragment.forceRefresh();
         }
     }
 
+    // Interface ItemListFragment.ItemListFragmentListener ---------------------------------------
     /**
      * When users press "Create button", show CreateItemFragment
      */
@@ -106,6 +107,17 @@ public class MainActivity extends GoogleApiActivity
                     .addToBackStack(null)
                     .commit();
         }
+    }
+
+    /**
+     * When users want to call APP server API, they need Google Instance ID
+     */
+    @Override
+    public String onGetInstanceId() {
+        if (!isRegisteredToAppServer()) {
+            return null;
+        }
+        return InstanceID.getInstance(this).getId();
     }
 
     /**

@@ -55,7 +55,11 @@ public class GoogleCloudMessagingActivity extends Activity {
                 }
             }
         };
-        fetchToken();
+        // Fetch a token and register to the APP server when the APP starts
+        if (savedInstanceState == null) {
+            setUnregisteredToAppServer();
+            fetchToken();
+        }
     }
 
     @Override
@@ -98,7 +102,11 @@ public class GoogleCloudMessagingActivity extends Activity {
 
     // Trigger when a broadcast intent with action REGISTRATION_COMPLETE is received
     protected void onGcmRegistrationComplete() {
-        showToken();
+        if (!isRegisteredToAppServer()) {
+            finish();
+        } else {
+            showToken();
+        }
     }
 
     // Trigger when a broadcast intent with action UNREGISTRATION_COMPLETE is received
@@ -186,5 +194,20 @@ public class GoogleCloudMessagingActivity extends Activity {
             return false;
         }
         return true;
+    }
+
+    /**
+     * Set an unregistered flag to indicate that it hasn't registered to the APP company server since this time APP started.
+     */
+    protected void setUnregisteredToAppServer() {
+        PreferenceManager.getDefaultSharedPreferences(this).edit().putBoolean(MyConstants.SENT_TOKEN_TO_SERVER, false).apply();
+    }
+
+    /**
+     * Check whether it has registered to the APP company server since this time APP started.
+     * @return APP has registered or not.
+     */
+    protected boolean isRegisteredToAppServer() {
+        return PreferenceManager.getDefaultSharedPreferences(this).getBoolean(MyConstants.SENT_TOKEN_TO_SERVER, false);
     }
 }

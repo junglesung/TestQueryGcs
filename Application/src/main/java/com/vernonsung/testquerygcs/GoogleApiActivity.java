@@ -17,7 +17,8 @@ import com.google.android.gms.location.LocationServices;
  * Inherit this and set OnGooglePlayServiceConnectedListener which should be called after connected.
  */
 public class GoogleApiActivity extends GoogleCloudMessagingActivity
-        implements GoogleApiClient.ConnectionCallbacks, GoogleApiClient.OnConnectionFailedListener {
+                            implements GoogleApiClient.ConnectionCallbacks,
+                                       GoogleApiClient.OnConnectionFailedListener {
 
     public interface OnGooglePlayServiceConnectedListener {
         void onGooglePlayServiceConnected();
