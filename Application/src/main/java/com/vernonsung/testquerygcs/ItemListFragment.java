@@ -150,35 +150,6 @@ public class ItemListFragment extends Fragment {
     }
 
     @Override
-    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
-        inflater.inflate(R.menu.main_menu, menu);
-    }
-
-    /**
-     * Respond to the user's selection of the Refresh action item. Start the SwipeRefreshLayout
-     * progress bar, then initiate the background task that refreshes the content.
-     */
-    @Override
-    public boolean onOptionsItemSelected(MenuItem item) {
-        switch (item.getItemId()) {
-            case R.id.menu_refresh:
-                Log.i(LOG_TAG, "Refresh menu item selected");
-
-                // We make sure that the SwipeRefreshLayout is displaying it's refreshing indicator
-                if (!mSwipeRefreshLayout.isRefreshing()) {
-                    mSwipeRefreshLayout.setRefreshing(true);
-                }
-
-                // Start our refresh background task
-                refresh();
-
-                return true;
-        }
-
-        return super.onOptionsItemSelected(item);
-    }
-
-    @Override
     public void onAttach(Context context) {
         super.onAttach(context);
         if (context instanceof ItemListFragmentListener) {
@@ -210,6 +181,35 @@ public class ItemListFragment extends Fragment {
         itemListFragmentListener = null;
     }
 
+    @Override
+    public void onCreateOptionsMenu(Menu menu, MenuInflater inflater) {
+        inflater.inflate(R.menu.main_menu, menu);
+    }
+
+    /**
+     * Respond to the user's selection of the Refresh action item. Start the SwipeRefreshLayout
+     * progress bar, then initiate the background task that refreshes the content.
+     */
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        switch (item.getItemId()) {
+            case R.id.menu_refresh:
+                Log.i(LOG_TAG, "Refresh menu item selected");
+
+                // We make sure that the SwipeRefreshLayout is displaying it's refreshing indicator
+                if (!mSwipeRefreshLayout.isRefreshing()) {
+                    mSwipeRefreshLayout.setRefreshing(true);
+                }
+
+                // Start our refresh background task
+                refresh();
+
+                return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+
     /**
      * Called when an item in the {@link android.widget.GridView} is clicked. Here will launch the
      * {@link ItemDetailFragment}, using the Scene Transition animation functionality.
@@ -233,14 +233,6 @@ public class ItemListFragment extends Fragment {
         if (mSwipeRefreshLayout.isRefreshing()) {
             return;
         }
-        // Check Google Instance ID registration
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
-        boolean isTokenSentToServer = sharedPreferences.getBoolean(MyConstants.SENT_TOKEN_TO_SERVER, false);
-        if (!isTokenSentToServer) {
-            Toast.makeText(getActivity(), getString(R.string.app_is_not_registered_please_check_internet_and_retry_later), Toast.LENGTH_LONG).show();
-            return;
-        }
-
         // Check network connection ability and then access Google Cloud Storage
         ConnectivityManager connMgr = (ConnectivityManager)getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
@@ -294,9 +286,9 @@ public class ItemListFragment extends Fragment {
     // Get the latest items from the server in background
     private class QueryItemTask extends AsyncTask<Void, Void, Item2[]> {
         static final String QUERY_ITEM_URL = "https://aliza-1148.appspot.com/api/0.1/items";
+        private String instanceId;
         // Screen orientation. Save and disable screen rotation in order to prevent screen rotation destroying the activity and the AsyncTask.
         private int screenOrientation;
-        private String instanceId;
 
         public QueryItemTask(String instanceId) {
             this.instanceId = instanceId;

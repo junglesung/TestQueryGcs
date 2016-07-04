@@ -16,10 +16,7 @@
 
 package com.vernonsung.testquerygcs;
 
-import com.google.android.gms.iid.InstanceID;
-import com.google.gson.Gson;
-import com.squareup.picasso.Picasso;
-
+import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.DialogFragment;
 import android.app.Fragment;
@@ -32,15 +29,11 @@ import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
 import android.os.AsyncTask;
-import android.os.Build;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.Nullable;
-import android.support.v4.app.NavUtils;
 import android.support.v4.content.LocalBroadcastManager;
-import android.support.v4.view.ViewCompat;
 import android.support.v4.widget.SwipeRefreshLayout;
-import android.transition.Transition;
 import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -49,6 +42,9 @@ import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+
+import com.google.gson.Gson;
+import com.squareup.picasso.Picasso;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -73,6 +69,12 @@ import javax.net.ssl.HttpsURLConnection;
  */
 public class ItemDetailFragment extends Fragment
                              implements PhoneNumberDialogFragment.PhoneNumberDialogListener {
+    /**
+     * The methods that the activity which contains the fragment should implement
+     */
+    public interface ItemDetailFragmentListener {
+        String onGetInstanceId();              // Get instance ID from the activity
+    }
 
     // Results of making a HTTP request to the server
     public enum UpdateItemStatus {
@@ -85,16 +87,7 @@ public class ItemDetailFragment extends Fragment
     private static final String LOG_TAG = "TestGood";
 
     // the fragment initialization parameters
-    private static final String ARG_ID = "id";                // String
-
-    // Extra name for the ID parameter
-    public static final String EXTRA_PARAM_ID = "detail:_id";
-
-    // View name of the header image. Used for activity scene transitions
-    public static final String VIEW_NAME_HEADER_IMAGE = "detail:header:image";
-
-    // View name of the header title. Used for activity scene transitions
-    public static final String VIEW_NAME_HEADER_TITLE = "detail:header:title";
+    private static final String ARG_ITEM_ID = "item_id";  // String
 
     // RCF 3339 time format from the server
     public static final String RFC3339FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
@@ -120,6 +113,9 @@ public class ItemDetailFragment extends Fragment
     private UpdateItemTask mUpdateItemTask;
     private GetItemTask mGetItemTask;
 
+    // Listener
+    private ItemDetailFragmentListener itemDetailFragmentListener;
+
     public ItemDetailFragment() {
         // Required empty public constructor
     }
@@ -128,13 +124,13 @@ public class ItemDetailFragment extends Fragment
      * Use this factory method to create a new instance of
      * this fragment using the provided parameters.
      *
-     * @param item The item to show detail
+     * @param itemId Query the item detail by the item ID from the APP server
      * @return A new instance of fragment ItemDetailFragment.
      */
-    public static ItemDetailFragment newInstance(Item2 item) {
+    public static ItemDetailFragment newInstance(String itemId) {
         ItemDetailFragment fragment = new ItemDetailFragment();
         Bundle args = new Bundle();
-        args.putString(ARG_ID, item.getId());
+        args.putString(ARG_ITEM_ID, itemId);
         fragment.setArguments(args);
         return fragment;
     }
@@ -143,6 +139,14 @@ public class ItemDetailFragment extends Fragment
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        // Get item ID from argument
+        String id = getArguments().getString(ARG_ITEM_ID);
+        if (id == null || id.isEmpty()) {
+            throw new RuntimeException(getActivity().toString()
+                    + " must give item ID as argument");
+        }
+        mItem = new Item2();
+        mItem.setId(id);
     }
 
     @Nullable
@@ -188,7 +192,7 @@ public class ItemDetailFragment extends Fragment
             @Override
             public void onRefresh() {
                 Log.i(LOG_TAG, "Start swipe refresh");
-                initiateRefresh();
+                refresh();
             }
         });
 
@@ -198,8 +202,44 @@ public class ItemDetailFragment extends Fragment
     @Override
     public void onViewCreated(View view, Bundle savedInstanceState) {
         super.onViewCreated(view, savedInstanceState);
-        // Show item data
-        refreshByIntentItemId(savedInstanceState);
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+        refresh();
+    }
+
+    @Override
+    public void onAttach(Context context) {
+        super.onAttach(context);
+        if (context instanceof ItemDetailFragmentListener) {
+            itemDetailFragmentListener = (ItemDetailFragmentListener) context;
+        } else {
+            throw new RuntimeException(context.toString()
+                    + " must implement ItemDetailFragmentListener");
+        }
+    }
+
+    /**
+     * Deprecated in API level 23. Keep it here for backward compatibility
+     */
+    @Deprecated
+    @Override
+    public void onAttach(Activity activity) {
+        super.onAttach(activity);
+        if (activity instanceof ItemDetailFragmentListener) {
+            itemDetailFragmentListener = (ItemDetailFragmentListener) activity;
+        } else {
+            throw new RuntimeException(activity.toString()
+                    + " must implement ItemDetailFragmentListener");
+        }
+    }
+
+    @Override
+    public void onDetach() {
+        super.onDetach();
+        itemDetailFragmentListener = null;
     }
 
     @Override
@@ -229,25 +269,6 @@ public class ItemDetailFragment extends Fragment
         Log.d(LOG_TAG, "Return from Phone Dialog canceled");
     }
 
-    // Called by onCreate()
-    // Get item ID from intent and trigger refresh to get item data from the server and show
-    private void refreshByIntentItemId(Bundle savedInstanceState) {
-        // Get item ID from intent
-        String id = getArguments().getString(ARG_ID);
-        if (id == null) {
-            throw new RuntimeException(getActivity().toString()
-                    + " must give item ID as argument");
-        }
-        mItem = new Item2();
-        mItem.setId(id);
-
-        if (savedInstanceState != null) {
-            initiateRefresh();
-        } else {
-            flagRefreshNeeded = true;
-        }
-    }
-
     // Show detail information
     private void showItem() {
         // Show attendants.
@@ -256,7 +277,7 @@ public class ItemDetailFragment extends Fragment
         if (userId.isEmpty()) {
             Log.d(LOG_TAG, "Got empty user ID. Go to main activity.");
             Toast.makeText(getActivity(), getString(R.string.data_is_out_of_date_reload_automatically), Toast.LENGTH_LONG).show();
-            NavUtils.navigateUpFromSameTask(getActivity());
+            navigateUp();
         }
         for (Item2.ItemMember member: mItem.getMembers()) {
             if (member.getUserkey().equals(userId)) {
@@ -318,21 +339,6 @@ public class ItemDetailFragment extends Fragment
 
     }
 
-    // Refresh if needed
-    public void tryRefresh() {
-        if (!mSwipeRefreshLayout.isRefreshing() && flagRefreshNeeded) {
-            initiateRefresh();
-            flagRefreshNeeded = false;
-        }
-    }
-
-    // Force refreshing if it's not refreshing
-    public void forceRefresh() {
-        if (!mSwipeRefreshLayout.isRefreshing()) {
-            initiateRefresh();
-        }
-    }
-
     // Show dialog for users to input/confirm their phone numbers
     // Dialog will really shows after returning to activity
     public void showPhoneNumberDialog() {
@@ -359,27 +365,28 @@ public class ItemDetailFragment extends Fragment
     }
 
     private void modifyAttendant(int change) {
-        // Check Google Instance ID registration
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
-        boolean isTokenSentToServer = sharedPreferences.getBoolean(MyConstants.SENT_TOKEN_TO_SERVER, false);
-        if (!isTokenSentToServer) {
-            Toast.makeText(getActivity(), getString(R.string.app_is_not_registered_please_check_internet_and_retry_later), Toast.LENGTH_LONG).show();
-            return;
-        }
-
         // Check network connection ability and then access Google Cloud Storage
         ConnectivityManager connMgr = (ConnectivityManager)getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
         NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
         if (networkInfo == null || !networkInfo.isConnected()) {
+            Log.d(LOG_TAG, getString(R.string.no_network_connection_available));
             Toast.makeText(getActivity(), getString(R.string.no_network_connection_available), Toast.LENGTH_SHORT).show();
             return;
         }
-        if (mUpdateItemTask != null && mUpdateItemTask .getStatus() == AsyncTask.Status.RUNNING) {
+        // Get Google Instance ID
+        String instanceId = itemDetailFragmentListener.onGetInstanceId();
+        if (instanceId == null || instanceId.isEmpty()) {
+            Log.d(LOG_TAG, getString(R.string.app_is_not_registered_please_check_internet_and_retry_later));
+            Toast.makeText(getActivity(), getString(R.string.app_is_not_registered_please_check_internet_and_retry_later), Toast.LENGTH_LONG).show();
+            return;
+        }
+        if (mUpdateItemTask != null && mUpdateItemTask.getStatus() == AsyncTask.Status.RUNNING) {
+            Log.d(LOG_TAG, getString(R.string.server_is_busy_please_try_again_later));
             Toast.makeText(getActivity(), getString(R.string.server_is_busy_please_try_again_later), Toast.LENGTH_SHORT).show();
             return;
         }
         // Execute querying thread
-        mUpdateItemTask = new UpdateItemTask();
+        mUpdateItemTask = new UpdateItemTask(instanceId, mItem.getId());
         mUpdateItemTask.execute(change);
     }
 
@@ -408,10 +415,17 @@ public class ItemDetailFragment extends Fragment
     // Update the item on the server in background
     private class UpdateItemTask extends AsyncTask<Integer, Void, Void> {
         static final String UPDATE_ITEM_URL = "https://aliza-1148.appspot.com/api/0.1/items";
+        private String instanceId;
+        private String itemId;
         private int change;
         private UpdateItemStatus status = UpdateItemStatus.SUCCESS;
         // Screen orientation. Save and disable screen rotation in order to prevent screen rotation destroying the activity and the AsyncTask.
         private int screenOrientation;
+
+        public UpdateItemTask(String instanceId, String itemId) {
+            this.instanceId = instanceId;
+            this.itemId = itemId;
+        }
 
         @Override
         protected void onPreExecute() {
@@ -465,14 +479,14 @@ public class ItemDetailFragment extends Fragment
             int size;
             byte[] data;
             OutputStream out;
-            String itemUrl = UPDATE_ITEM_URL + "/" + mItem.getId();
+            String itemUrl = UPDATE_ITEM_URL + "/" + itemId;
 
             try {
                 url = new URL(itemUrl);
                 urlConnection = (HttpsURLConnection) url.openConnection();
 
                 // Set authentication instance ID
-                urlConnection.setRequestProperty(MyConstants.HTTP_HEADER_INSTANCE_ID, InstanceID.getInstance(getActivity()).getId());
+                urlConnection.setRequestProperty(MyConstants.HTTP_HEADER_INSTANCE_ID, instanceId);
                 // Set content type
                 urlConnection.setRequestProperty("Content-Type", "application/json");
 
@@ -597,35 +611,46 @@ public class ItemDetailFragment extends Fragment
     }
 
     // Refresh the item information from the server
-    private void initiateRefresh() {
-        // Check Google Instance ID registration
-        SharedPreferences sharedPreferences = PreferenceManager.getDefaultSharedPreferences(getActivity());
-        boolean isTokenSentToServer = sharedPreferences.getBoolean(MyConstants.SENT_TOKEN_TO_SERVER, false);
-        if (!isTokenSentToServer) {
+    public void refresh() {
+        // Make sure it's not refreshing
+        if (mSwipeRefreshLayout.isRefreshing()) {
+            return;
+        }
+        // Check network connection ability and then access Google Cloud Storage
+        ConnectivityManager connMgr = (ConnectivityManager)getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
+        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
+        if (networkInfo == null || !networkInfo.isConnected()) {
+            Log.d(LOG_TAG, getString(R.string.no_network_connection_available));
+            Toast.makeText(getActivity(), getString(R.string.no_network_connection_available), Toast.LENGTH_SHORT).show();
+            return;
+        }
+        // Get Google Instance ID
+        String instanceId = itemDetailFragmentListener.onGetInstanceId();
+        if (instanceId == null || instanceId.isEmpty()) {
+            Log.d(LOG_TAG, getString(R.string.app_is_not_registered_please_check_internet_and_retry_later));
             Toast.makeText(getActivity(), getString(R.string.app_is_not_registered_please_check_internet_and_retry_later), Toast.LENGTH_LONG).show();
             return;
         }
-
-        // Check network connection ability and then access Google Cloud Storage
-        ConnectivityManager connMgr = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
-        NetworkInfo networkInfo = connMgr.getActiveNetworkInfo();
-        if (networkInfo != null && networkInfo.isConnected()) {
-            // We make sure that the SwipeRefreshLayout is displaying it's refreshing indicator
-            mSwipeRefreshLayout.setRefreshing(true);
-            // Execute querying thread
-            mGetItemTask = new GetItemTask();
-            mGetItemTask.execute();
-        } else {
-            Toast.makeText(getActivity(), getString(R.string.no_network_connection_available), Toast.LENGTH_SHORT).show();
-        }
+        // We make sure that the SwipeRefreshLayout is displaying it's refreshing indicator
+        mSwipeRefreshLayout.setRefreshing(true);
+        // Execute querying thread
+        mGetItemTask = new GetItemTask(instanceId, mItem.getId());
+        mGetItemTask.execute();
     }
 
     // Get the latest item from the server in background
     private class GetItemTask extends AsyncTask<Void, Void, Item2> {
         static final String GET_ITEM_URL = "https://aliza-1148.appspot.com/api/0.1/items";
+        private String instanceId;
+        private String itemId;
         private UpdateItemStatus status = UpdateItemStatus.SUCCESS;
         // Screen orientation. Save and disable screen rotation in order to prevent screen rotation destroying the activity and the AsyncTask.
         private int screenOrientation;
+
+        public GetItemTask(String instanceId, String itemId) {
+            this.instanceId = instanceId;
+            this.itemId = itemId;
+        }
 
         @Override
         protected void onPreExecute() {
@@ -671,14 +696,14 @@ public class ItemDetailFragment extends Fragment
             URL url;
             HttpsURLConnection urlConnection = null;
             Item2 item = null;
-            String itemUrl = GET_ITEM_URL + "/" + mItem.getId();
+            String itemUrl = GET_ITEM_URL + "/" + itemId;
 
             try {
                 url = new URL(itemUrl);
                 urlConnection = (HttpsURLConnection) url.openConnection();
 
                 // Set authentication instance ID
-                urlConnection.setRequestProperty(MyConstants.HTTP_HEADER_INSTANCE_ID, InstanceID.getInstance(getActivity()).getId());
+                urlConnection.setRequestProperty(MyConstants.HTTP_HEADER_INSTANCE_ID, instanceId);
                 // Set content type
                 urlConnection.setRequestProperty("Content-Type", "application/json");
 

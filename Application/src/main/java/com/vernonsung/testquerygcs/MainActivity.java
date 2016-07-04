@@ -35,6 +35,9 @@ public class MainActivity extends GoogleApiActivity
                                   CreateItemFragment.OnFetchLocationListener {
     private static final String LOG_TAG = "TestGood";
 
+    // Item ID in the startup intent
+    public static final String INTENT_PARM_ITEM_ID = "intent_parm_item_id";
+
     @Override
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -43,6 +46,15 @@ public class MainActivity extends GoogleApiActivity
         // UI. Show ItemListFragment at the first start. Fragment manager will recreate it after screen orientation changes.
         if (savedInstanceState == null) {
             getFragmentManager().beginTransaction().add(R.id.frameMain, new ItemListFragment()).commit();
+        }
+
+        // Show item detail if an item ID is given
+        String itemId = getIntent().getStringExtra(INTENT_PARM_ITEM_ID);
+        if (itemId != null && !itemId.isEmpty()) {
+            getFragmentManager().beginTransaction().replace(R.id.frameMain, new ItemListFragment()).commit();
+            getFragmentManager().beginTransaction().replace(R.id.frameMain, ItemDetailFragment.newInstance(itemId))
+                                                   .addToBackStack(null)
+                                                   .commit();
         }
 
         setOnGooglePlayServiceConnectedListener(new OnGooglePlayServiceConnectedListener() {
@@ -67,7 +79,7 @@ public class MainActivity extends GoogleApiActivity
             itemListFragment.refresh();
         } else if (fragment instanceof ItemDetailFragment) {
             ItemDetailFragment itemDetailFragment = (ItemDetailFragment)fragment;
-            itemDetailFragment.tryRefresh();
+            itemDetailFragment.refresh();
         }
     }
 
@@ -80,7 +92,7 @@ public class MainActivity extends GoogleApiActivity
             itemListFragment.refresh();
         } else if (fragment instanceof ItemDetailFragment) {
             ItemDetailFragment itemDetailFragment = (ItemDetailFragment)fragment;
-            itemDetailFragment.forceRefresh();
+            itemDetailFragment.refresh();
         }
     }
 
@@ -103,7 +115,7 @@ public class MainActivity extends GoogleApiActivity
     public void onShowItemDetail(Item2 item) {
         if (item != null) {
             getFragmentManager().beginTransaction()
-                    .replace(R.id.frameMain, ItemDetailFragment.newInstance(item))
+                    .replace(R.id.frameMain, ItemDetailFragment.newInstance(item.getId()))
                     .addToBackStack(null)
                     .commit();
         }
