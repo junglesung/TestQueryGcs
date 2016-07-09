@@ -32,6 +32,7 @@ import com.google.android.gms.location.LocationServices;
  */
 public class MainActivity extends GoogleApiActivity
                        implements ItemListFragment.ItemListFragmentListener,
+                                  ItemDetailFragment.ItemDetailFragmentListener,
                                   CreateItemFragment.OnFetchLocationListener {
     private static final String LOG_TAG = "TestGood";
 

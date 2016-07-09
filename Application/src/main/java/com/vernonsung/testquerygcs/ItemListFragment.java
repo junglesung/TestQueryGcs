@@ -230,7 +230,7 @@ public class ItemListFragment extends Fragment {
      */
     public void refresh() {
         // Make sure it's not refreshing
-        if (mSwipeRefreshLayout.isRefreshing()) {
+        if (mQueryItemTask != null && mQueryItemTask.getStatus() == AsyncTask.Status.RUNNING) {
             return;
         }
         // Check network connection ability and then access Google Cloud Storage

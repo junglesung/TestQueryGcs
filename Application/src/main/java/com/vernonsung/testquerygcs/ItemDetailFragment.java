@@ -43,6 +43,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.bm.library.PhotoView;
 import com.google.gson.Gson;
 import com.squareup.picasso.Picasso;
 
@@ -93,7 +94,7 @@ public class ItemDetailFragment extends Fragment
     public static final String RFC3339FORMAT = "yyyy-MM-dd'T'HH:mm:ss";
 
     // UI
-    private ImageView mHeaderImageView;
+    private PhotoView imageViewMain;
     private TextView mHeaderTitle;
     private ImageButton mButtonPlus;
     private ImageButton mButtonMinus;
@@ -106,8 +107,6 @@ public class ItemDetailFragment extends Fragment
     private int myAttendant = 0;
     // User input phone number got from dialog
     private String mPhoneNumber;
-    // Automatically retry when network is OK.
-    boolean flagRefreshNeeded = false;
 
     // Threads
     private UpdateItemTask mUpdateItemTask;
@@ -160,34 +159,30 @@ public class ItemDetailFragment extends Fragment
                 R.color.swipe_color_1, R.color.swipe_color_2,
                 R.color.swipe_color_3, R.color.swipe_color_4);
 
-        mHeaderImageView = (ImageView) view.findViewById(R.id.imageview_header);
+        imageViewMain = (PhotoView) view.findViewById(R.id.photoviewMain);
         mHeaderTitle = (TextView) view.findViewById(R.id.textview_title);
         mButtonPlus = (ImageButton) view.findViewById(R.id.imageButton_plus);
         mButtonMinus = (ImageButton) view.findViewById(R.id.imageButton_minus);
         mTextViewIntroduction = (TextView) view.findViewById(R.id.textview_introduction);
         mButtonCallPhone = (ImageButton) view.findViewById(R.id.imageButton_callPhone);
-
         mButtonPlus.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 attend();
             }
         });
-
         mButtonMinus.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 leave();
             }
         });
-
         mButtonCallPhone.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 callOthersPhone();
             }
         });
-
         mSwipeRefreshLayout.setOnRefreshListener(new SwipeRefreshLayout.OnRefreshListener() {
             @Override
             public void onRefresh() {
@@ -195,7 +190,7 @@ public class ItemDetailFragment extends Fragment
                 refresh();
             }
         });
-
+        imageViewMain.enable();
         return view;
     }
 
@@ -312,20 +307,20 @@ public class ItemDetailFragment extends Fragment
      * Load the item's thumbnail image into our {@link ImageView}.
      */
     private void loadThumbnail() {
-        Picasso.with(mHeaderImageView.getContext())
+        Picasso.with(getActivity())
                 .load(mItem.getThumbnail())
-                .into(mHeaderImageView);
+                .into(imageViewMain);
     }
 
     /**
      * Load the item's full-size image into our {@link ImageView}.
      */
     private void loadFullSizeImage() {
-        Picasso.with(mHeaderImageView.getContext())
+        Picasso.with(getActivity())
                 .load(mItem.getImage())
                 .noFade()
                 .noPlaceholder()
-                .into(mHeaderImageView);
+                .into(imageViewMain);
     }
 
     // Set call buttons' visibility
@@ -613,7 +608,7 @@ public class ItemDetailFragment extends Fragment
     // Refresh the item information from the server
     public void refresh() {
         // Make sure it's not refreshing
-        if (mSwipeRefreshLayout.isRefreshing()) {
+        if (mGetItemTask != null && mGetItemTask.getStatus() == AsyncTask.Status.RUNNING) {
             return;
         }
         // Check network connection ability and then access Google Cloud Storage
@@ -631,8 +626,6 @@ public class ItemDetailFragment extends Fragment
             Toast.makeText(getActivity(), getString(R.string.app_is_not_registered_please_check_internet_and_retry_later), Toast.LENGTH_LONG).show();
             return;
         }
-        // We make sure that the SwipeRefreshLayout is displaying it's refreshing indicator
-        mSwipeRefreshLayout.setRefreshing(true);
         // Execute querying thread
         mGetItemTask = new GetItemTask(instanceId, mItem.getId());
         mGetItemTask.execute();
@@ -657,6 +650,8 @@ public class ItemDetailFragment extends Fragment
             // Disable screen rotation
             screenOrientation = getActivity().getRequestedOrientation();
             getActivity().setRequestedOrientation(ActivityInfo.SCREEN_ORIENTATION_LOCKED);
+            // We make sure that the SwipeRefreshLayout is displaying it's refreshing indicator
+            mSwipeRefreshLayout.setRefreshing(true);
         }
 
         @Override
@@ -685,6 +680,7 @@ public class ItemDetailFragment extends Fragment
             }
             // Stop the refreshing indicator
             mSwipeRefreshLayout.setRefreshing(false);
+            Log.d(LOG_TAG, "Refresh finished");
 
             // Enable screen rotation
             getActivity().setRequestedOrientation(screenOrientation);
