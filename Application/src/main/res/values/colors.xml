@@ -9,4 +9,9 @@
     <color name="primary_pressed">#00ffff</color>
     <color name="ripple">#ffff00</color>
 
+    <!-- Toolbar -->
+    <color name="colorPrimary">#3F51B5</color>
+    <color name="colorPrimaryDark">#303F9F</color>
+    <color name="colorAccent">#FF4081</color>
+
 </resources>

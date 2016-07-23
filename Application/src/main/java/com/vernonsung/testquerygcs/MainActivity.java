@@ -21,6 +21,7 @@ import android.location.Location;
 import android.os.Bundle;
 import android.util.Log;
 import android.widget.Toast;
+import android.support.v7.widget.Toolbar;
 
 import com.google.android.gms.iid.InstanceID;
 import com.google.android.gms.location.LocationServices;
@@ -43,6 +44,10 @@ public class MainActivity extends GoogleApiActivity
     public void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.main_activity);
+
+        // Toolbar
+        Toolbar toolbar = (Toolbar)findViewById(R.id.toolbarMain);
+        setSupportActionBar(toolbar);
 
         // UI. Show ItemListFragment at the first start. Fragment manager will recreate it after screen orientation changes.
         if (savedInstanceState == null) {

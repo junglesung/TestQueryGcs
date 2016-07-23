@@ -1,6 +1,5 @@
 package com.vernonsung.testquerygcs;
 
-import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -9,6 +8,7 @@ import android.content.SharedPreferences;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.v4.content.LocalBroadcastManager;
+import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.widget.Toast;
 
@@ -16,7 +16,7 @@ import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.GoogleApiAvailability;
 
 // Provide Google Cloud Messaging related utility for an activity to use
-public class GoogleCloudMessagingActivity extends Activity {
+public class GoogleCloudMessagingActivity extends AppCompatActivity {
     // Components
     private BroadcastReceiver mRegistrationBroadcastReceiver;
 

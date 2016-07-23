@@ -35,14 +35,12 @@
     <string name="ok">OK</string>
     <string name="more">GPS</string>
     <string name="simple">Simple</string>
-    <string name="send">Send</string>
     <string name="cancel">Cancel</string>
     <string name="valid">Valid</string>
     <string name="invalid">Invalid</string>
     <string name="ex_mobile_phone_number">Ex, 0912345678</string>
     <string name="external_storage_is_not_writable">External storage is not writable</string>
     <string name="no_camera_app">No camera APP</string>
-    <string name="no_app_to_choose_an_image">No APP to choose an image</string>
     <string name="no_network_connection_available">No network connection available</string>
     <string name="connection_error">Connection error</string>
     <string name="get_location_failed_because_google_play_service_is_not_installed">Get location failed. Please make sure Google play service is running.</string>
@@ -60,5 +58,22 @@
     <string name="phone_app_is_not_found">Phone APP is not found.</string>
     <string name="call_your_partner">Call your partner.</string>
     <string name="bug_null_item_id">Bug: NULL item ID. Please report.</string>
+
+    <!-- One fragment -->
+    <string name="camera">Camera</string>
+    <string name="photo">Photo</string>
+    <string name="rotate_90">Rotate 90</string>
+    <string name="people">People</string>
+    <string name="people_2">2 people</string>
+    <string name="people_3">3 people</string>
+    <string name="people_4">4 people</string>
+    <string name="people_5">5 people</string>
+    <string name="people_6">6 people</string>
+    <string name="people_7">7 people</string>
+    <string name="people_8">8 people</string>
+    <string name="people_9">9 people</string>
+    <string name="send">Send</string>
+    <string name="no_app_to_choose_an_image">No APP to choose an image</string>
+    <string name="load_an_image_from">Load an image from</string>
 
 </resources>

@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <item android:id="@+id/menuitemCamera"
+        android:icon="@drawable/ic_add_a_photo_white_24dp"
+        android:title="@string/camera"
+        app:showAsAction="always" />
+    <item android:id="@+id/menuitemPhoto"
+        android:icon="@drawable/ic_insert_photo_white_24dp"
+        android:title="@string/photo"
+        app:showAsAction="always" />
+    <item android:id="@+id/menuitemRotate90"
+        android:icon="@drawable/ic_rotate_right_white_24dp"
+        android:title="@string/rotate_90"
+        app:showAsAction="always" />
+    <item
+        android:id="@+id/menuitemPeople"
+        android:title="@string/people"
+        android:icon="@drawable/ic_2_white_24dp"
+        app:showAsAction="always">
+        <menu>
+            <item android:id="@+id/menuitem2"
+                android:title="@string/people_2"
+                app:showAsAction="always" />
+            <item android:id="@+id/menuitem3"
+                android:title="@string/people_3"
+                app:showAsAction="always" />
+            <item android:id="@+id/menuitem4"
+                android:title="@string/people_4"
+                app:showAsAction="always" />
+            <item android:id="@+id/menuitem5"
+                android:title="@string/people_5"
+                app:showAsAction="always" />
+            <item android:id="@+id/menuitem6"
+                android:title="@string/people_6"
+                app:showAsAction="always" />
+            <item android:id="@+id/menuitem7"
+                android:title="@string/people_7"
+                app:showAsAction="always" />
+            <item android:id="@+id/menuitem8"
+                android:title="@string/people_8"
+                app:showAsAction="always" />
+            <item android:id="@+id/menuitem9"
+                android:title="@string/people_9"
+                app:showAsAction="always" />
+        </menu>
+    </item>
+    <item android:id="@+id/menuitemSend"
+        android:title="@string/send"
+        android:icon="@drawable/ic_send_white_24dp"
+        app:showAsAction="always" />
+</menu>
