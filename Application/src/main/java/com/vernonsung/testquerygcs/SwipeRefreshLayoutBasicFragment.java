@@ -24,6 +24,7 @@ import android.content.pm.ActivityInfo;
 import android.location.Location;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
+import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
@@ -101,7 +102,7 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
         super.onCreate(savedInstanceState);
 
         // Notify the system to allow an options menu for this fragment.
-//        setHasOptionsMenu(true);
+        setHasOptionsMenu(true);
 
         // Initial variables
         mGoogleApiClient = ((GoogleApiActivity)getActivity()).getGoogleApiClient();
@@ -193,6 +194,9 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
                 // Start our refresh background task
                 initiateRefresh();
 
+                return true;
+            case R.id.menu_privacy:
+                showPrivacy();
                 return true;
         }
 
@@ -326,6 +330,11 @@ public class SwipeRefreshLayoutBasicFragment extends Fragment {
         }
         // Remove all items from the ListAdapter, and then replace them with the new items
         mAdapter.notifyDataSetChanged();
+    }
+
+    // Show privacy policy
+    private void showPrivacy () {
+        startActivity(new Intent(Intent.ACTION_VIEW, Uri.parse(MyConstants.PRIVACY_URL)));
     }
 
     // Get the latest items from the server in background

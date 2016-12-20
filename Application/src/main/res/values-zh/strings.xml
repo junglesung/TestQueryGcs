@@ -41,4 +41,5 @@
     <string name="valid">可用的</string>
     <string name="wait_for_1_friend">等待一個朋友加入</string>
     <string name="wrong_phone_number_format_please_enter_again">錯誤的電話格式，請再輸入一次</string>
+    <string name="menu_privacy">隱私權政策</string>
 </resources>

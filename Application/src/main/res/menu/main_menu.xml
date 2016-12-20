@@ -21,6 +21,10 @@
           android:title="@string/menu_refresh"
           android:showAsAction="never" />
 
+    <item android:id="@+id/menu_privacy"
+        android:title="@string/menu_privacy"
+        android:showAsAction="never" />
+
     <item android:id="@+id/action_settings"
           android:title="@string/action_settings"
           android:orderInCategory="100"

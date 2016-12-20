@@ -30,6 +30,7 @@ public class MyConstants {
     public static final String TOPIC_MESSAGE_URL = APP_SERVER_URL_BASE + "/topic-messages";
     public static final String GROUP_MESSAGE_URL = APP_SERVER_URL_BASE + "/group-messages";
     public static final String GROUP_URL = APP_SERVER_URL_BASE + "/groups";
+    public static final String PRIVACY_URL = "https://1drv.ms/w/s!AvTewfICJTYYmhCtp7ErxYS70_6z";
 
     // HTTP HEADER
     public static final String HTTP_HEADER_INSTANCE_ID = "Instance-Id";
